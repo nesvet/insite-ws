@@ -1,0 +1,33 @@
+{
+	"name": "insite-ws",
+	"version": "1.0.350",
+	"description": "inSite WebSockets",
+	"type": "module",
+	"exports": {
+		"./server": "./lib/server/index.js",
+		"./client": "./lib/client/index.js"
+	},
+	"packageManager": "yarn@1.22.22",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/nesvet/insite-ws.git"
+	},
+	"keywords": [
+		"insite",
+		"ws",
+		"websockets"
+	],
+	"author": "Eugene Nesvetaev <dev@nesvet.dev> (https://nesvet.dev/)",
+	"license": "MIT",
+	"dependencies": {
+		"@nesvet/n": "^1",
+		"eventemitter3": "^5",
+		"ws": "^8"
+	},
+	"devDependencies": {
+		"@nesvet/eslint-config": "^1"
+	}
+}
