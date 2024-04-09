@@ -5,10 +5,10 @@ import { WebSocketServer } from "ws";
 import { heartbeatGap, heartbeatInterval } from "../common";
 import { extendEventEmitter } from "../extendEventEmitter";
 import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
-import { InSiteWebSocketServerClient } from "./WebSocketServerClient";
+import { WebSocketServerClient } from "./WebSocketServerClient";
 
 
-export class InSiteWebSocketServer extends WebSocketServer {
+class InSiteWebSocketServer extends WebSocketServer {
 	constructor(options = {}, props, handleListen) {
 		const {
 			upgrade,
@@ -20,7 +20,7 @@ export class InSiteWebSocketServer extends WebSocketServer {
 		
 		super({
 			...wssOptions,
-			WebSocket: InSiteWebSocketServerClient,
+			WebSocket: WebSocketServerClient,
 			server
 		});
 		
@@ -119,3 +119,5 @@ export class InSiteWebSocketServer extends WebSocketServer {
 	}
 	
 }
+
+export { InSiteWebSocketServer as WebSocketServer };

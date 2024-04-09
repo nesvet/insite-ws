@@ -4,12 +4,13 @@
 	"description": "inSite WebSockets",
 	"type": "module",
 	"exports": {
-		"./server": "./lib/server/index.js",
-		"./client": "./lib/client/index.js"
+		"./server": "./dist/server.js",
+		"./client": "./dist/client.js"
 	},
 	"packageManager": "yarn@1.22.22",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "node .conveyer"
 	},
 	"repository": {
 		"type": "git",
@@ -28,6 +29,7 @@
 		"ws": "^8"
 	},
 	"devDependencies": {
+		"@nesvet/conveyer": "^1",
 		"@nesvet/eslint-config": "^1"
 	}
 }

@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 
 
-export class InSiteWebSocketServerClient extends WebSocket {
+class InSiteWebSocketServerClient extends WebSocket {
 	
 	isWebSocketServerClient = true;
 	
@@ -27,3 +27,5 @@ export class InSiteWebSocketServerClient extends WebSocket {
 	}
 	
 }
+
+export { InSiteWebSocketServerClient as WebSocketServerClient };

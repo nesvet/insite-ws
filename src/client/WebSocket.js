@@ -9,7 +9,7 @@ const reconnectTimeout = 2000;
 let i = 0;
 
 
-export class InSiteWebSocket extends EventEmitter {
+class InSiteWebSocket extends EventEmitter {
 	constructor(url, options = {}) {
 		super();
 		
@@ -221,3 +221,5 @@ export class InSiteWebSocket extends EventEmitter {
 	}
 	
 }
+
+export { InSiteWebSocket as WebSocket };
