@@ -1,35 +1,35 @@
 {
-	"name": "insite-ws",
-	"version": "1.0.355",
-	"description": "inSite WebSockets",
-	"type": "module",
-	"exports": {
-		"./server": "./dist/server.js",
-		"./client": "./dist/client.js"
-	},
-	"packageManager": "yarn@1.22.22",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"build": "node .conveyer"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/nesvet/insite-ws.git"
-	},
-	"keywords": [
-		"insite",
-		"ws",
-		"websockets"
-	],
-	"author": "Eugene Nesvetaev <dev@nesvet.dev> (https://nesvet.dev/)",
-	"license": "MIT",
-	"dependencies": {
-		"@nesvet/n": "^1",
-		"eventemitter3": "^5",
-		"ws": "^8"
-	},
-	"devDependencies": {
-		"@nesvet/conveyer": "^1",
-		"@nesvet/eslint-config": "^1"
-	}
+  "name": "insite-ws",
+  "version": "1.0.404",
+  "description": "inSite WebSockets",
+  "type": "module",
+  "exports": {
+    "./server": "./dist/server.js",
+    "./client": "./dist/client.js"
+  },
+  "packageManager": "bun@1.1.8",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "bun .conveyer.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nesvet/insite-ws.git"
+  },
+  "keywords": [
+    "insite",
+    "ws",
+    "websockets"
+  ],
+  "author": "Eugene Nesvetaev <dev@nesvet.dev> (https://nesvet.dev/)",
+  "license": "MIT",
+  "dependencies": {
+    "@nesvet/n": "^1",
+    "eventemitter3": "^5",
+    "ws": "^8"
+  },
+  "devDependencies": {
+    "@nesvet/conveyer": "^2",
+    "@nesvet/eslint-config": "^1"
+  }
 }
