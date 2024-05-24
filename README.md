@@ -9,5 +9,5 @@ $ npm install insite-ws
 Or
 
 ```sh
-$ yarn add insite-ws
+$ bun add insite-ws
 ```
