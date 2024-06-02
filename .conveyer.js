@@ -9,10 +9,7 @@ const distDir = "dist";
 const common = {
 	external: true,
 	format: "esm",
-	sourcemap: true,
-	define: {
-		"process.env.NODE_ENV": JSON.stringify(NODE_ENV)
-	}
+	sourcemap: true
 };
 
 
@@ -33,6 +30,9 @@ new Conveyer([
 		outfile: path.resolve(distDir, "client.js"),
 		platform: "neutral",
 		target: "es2020",
+		define: {
+			"process.env.NODE_ENV": JSON.stringify(NODE_ENV)
+		},
 		...common
 	})
 	

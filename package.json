@@ -1,13 +1,13 @@
 {
   "name": "insite-ws",
-  "version": "1.0.405",
+  "version": "1.0.406",
   "description": "inSite WebSockets",
   "type": "module",
   "exports": {
     "./server": "./dist/server.js",
     "./client": "./dist/client.js"
   },
-  "packageManager": "bun@1.1.9",
+  "packageManager": "bun@1.1.12",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "bun .conveyer.js"
