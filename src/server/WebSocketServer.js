@@ -1,7 +1,7 @@
 import http from "node:http";
 import https from "node:https";
-import { debounce } from "@nesvet/n";
 import { WebSocketServer } from "ws";
+import { debounce } from "@nesvet/n";
 import { heartbeatGap, heartbeatInterval } from "../common";
 import { extendEventEmitter } from "../extendEventEmitter";
 import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
@@ -30,10 +30,9 @@ class InSiteWebSocketServer extends WebSocketServer {
 			throw new Error("WebSocketServer now contains an \"upgrade\" property");
 		
 		if (props)
-			if (typeof props == "function") {
+			if (typeof props == "function")
 				handleListen = props;
-				props = undefined;
-			} else
+			else
 				Object.assign(this, props);
 		
 		this.upgrade = upgrade;
@@ -87,7 +86,7 @@ class InSiteWebSocketServer extends WebSocketServer {
 			} catch (error) {
 				InSiteWebSocketServer.handleClientError.call(this, error);
 			}
-		 else if (this[pingTsSymbol]) {
+		else if (this[pingTsSymbol]) {
 			this.latency = Date.now() - this[pingTsSymbol];
 			delete this[pingTsSymbol];
 		}

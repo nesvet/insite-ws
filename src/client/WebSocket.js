@@ -1,5 +1,5 @@
-import { debounce, noop } from "@nesvet/n";
 import EventEmitter from "eventemitter3";
+import { debounce, noop } from "@nesvet/n";
 import { heartbeatGap, heartbeatInterval } from "../common";
 import { extendEventEmitter } from "../extendEventEmitter";
 
@@ -43,7 +43,7 @@ class InSiteWebSocket extends EventEmitter {
 	
 	webSocket = null;
 	
-	#defib = debounce(function () {
+	#defib = debounce(/** @this InSiteWebSocket */function () {
 		
 		if (this.isOpen) {
 			if (process.env.NODE_ENV === "development")
@@ -100,7 +100,7 @@ class InSiteWebSocket extends EventEmitter {
 			} catch (error) {
 				this.#handleWebSocketError(error);
 			}
-		 else
+		else
 			this.webSocket.send("");
 		
 	};
