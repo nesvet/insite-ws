@@ -1,24 +1,24 @@
 import EventEmitter from "eventemitter3";
 import { debounce, noop } from "@nesvet/n";
 import { heartbeatGap, heartbeatInterval } from "../common";
-import { extendEventEmitter } from "../extendEventEmitter";
+import { Options } from "./types";
 
 
 const reconnectTimeout = 2000;
 
 let i = 0;
 
+const webSocketUrlWeakMap = new WeakMap<WebSocket, string>();
 
-class InSiteWebSocket extends EventEmitter {
-	constructor(url, options = {}) {
+
+export class InSiteWebSocket extends EventEmitter {
+	constructor(url: string, options: Options = {}) {
 		super();
-		
-		extendEventEmitter(this);
 		
 		this.url = url;
 		
 		const {
-			name = i++,
+			name = (i++).toString(),
 			protocols,
 			immediately = true,
 			autoReconnect = true,
@@ -29,7 +29,7 @@ class InSiteWebSocket extends EventEmitter {
 		
 		this.protocols = protocols;
 		
-		this.autoReconnect = autoReconnect;
+		this.autoReconnect = !!autoReconnect;
 		
 		if (on)
 			for (const eventName in on)
@@ -41,21 +41,21 @@ class InSiteWebSocket extends EventEmitter {
 		
 	}
 	
-	webSocket = null;
+	readonly isWebSocket = true;
 	
-	#defib = debounce(/** @this InSiteWebSocket */function () {
-		
-		if (this.isOpen) {
-			if (process.env.NODE_ENV === "development")
-				console.info(`WebSocket ${this.name} has no heartbeat - going offline`);
-			
-			this.webSocket.close();
-		}
-		
-	}, heartbeatInterval + heartbeatGap);
+	url: string;
 	
-	#openResolve;
-	#openReject;
+	name: string;
+	
+	protocols?: string[];
+	
+	autoReconnect: boolean;
+	
+	send?(data: ArrayBufferLike | ArrayBufferView | Blob | string): void;
+	
+	webSocket: null | WebSocket = null;
+	
+	#defib = debounce(InSiteWebSocket.defib, heartbeatInterval + heartbeatGap);
 	
 	get isConnecting() {
 		return this.webSocket ? this.webSocket.readyState === this.webSocket.CONNECTING : null;
@@ -73,11 +73,12 @@ class InSiteWebSocket extends EventEmitter {
 		return this.webSocket ? this.webSocket.readyState === this.webSocket.CLOSED : null;
 	}
 	
-	isChanged = false;
+	#openResolve?: (value?: unknown) => void;
+	#openReject?: (reason?: unknown) => void;
 	
 	#handleWebSocketOpen = () => {
 		
-		this.#openResolve();
+		this.#openResolve!();
 		this.#openResolve = undefined;
 		this.#openReject = undefined;
 		
@@ -87,7 +88,7 @@ class InSiteWebSocket extends EventEmitter {
 		
 	};
 	
-	#handleWebSocketMessage = ({ data: message }) => {
+	#handleWebSocketMessage = ({ data: message }: MessageEvent) => {
 		
 		this.#defib();
 		
@@ -98,14 +99,14 @@ class InSiteWebSocket extends EventEmitter {
 				this.emit("message", kind, ...rest);
 				this.emit(`message:${kind}`, ...rest);
 			} catch (error) {
-				this.#handleWebSocketError(error);
+				this.#handleWebSocketError(error as Error);
 			}
 		else
-			this.webSocket.send("");
+			this.webSocket!.send("");
 		
 	};
 	
-	#handleWebSocketError = error => {
+	#handleWebSocketError = (error: Error | Event | undefined) => {
 		if (error instanceof Event)
 			error = undefined;
 		
@@ -119,9 +120,9 @@ class InSiteWebSocket extends EventEmitter {
 		
 	};
 	
-	#reconnectTimeout;
+	#reconnectTimeout?: number;
 	
-	#handleWebSocketClose = event => {
+	#handleWebSocketClose = (event: CloseEvent) => {
 		
 		if (process.env.NODE_ENV === "development")
 			console.info(`WebSocket ${this.name} is closed with code ${event.code} and reason "${event.reason}"`);
@@ -134,46 +135,43 @@ class InSiteWebSocket extends EventEmitter {
 			if (process.env.NODE_ENV === "development")
 				console.info(`WebSocket ${this.name} will try to reconnect in 2 sec…`);
 			
-			this.#reconnectTimeout = setTimeout(() => this.open().catch(noop), reconnectTimeout);
+			this.#reconnectTimeout = setTimeout(() => this.open().catch(noop), reconnectTimeout) as unknown as number;
 		}
 		
 	};
 	
-	open(options = {}) {
+	async open(options: Options = {}) {
 		
 		clearTimeout(this.#reconnectTimeout);
 		
-		return this.close(4000, "reopen").then(() => {
+		await this.close(4000, "reopen");
+		
+		if (options.url)
+			this.url = options.url;
+		
+		if (options.protocols)
+			this.protocols = options.protocols;
+		
+		if (this.webSocket && webSocketUrlWeakMap.get(this.webSocket) !== this.url)
+			this.emit("server-change");
+		
+		return new Promise((resolve, reject) => {
+			this.#openResolve = resolve;
+			this.#openReject = reject;
 			
-			if (options.url)
-				this.url = options.url;
+			this.webSocket = new WebSocket(this.url, this.protocols);
 			
-			if (options.protocols)
-				this.protocols = options.protocols;
+			this.webSocket.addEventListener("open", this.#handleWebSocketOpen);
+			this.webSocket.addEventListener("message", this.#handleWebSocketMessage);
+			this.webSocket.addEventListener("error", this.#handleWebSocketError);
+			this.webSocket.addEventListener("close", this.#handleWebSocketClose);
 			
-			return new Promise((resolve, reject) => {
-				this.#openResolve = resolve;
-				this.#openReject = reject;
-				
-				if (this.webSocket) {
-					this.isChanged = this.webSocket._url !== this.url;
-					if (this.isChanged)
-						this.emit("server-change");
-				}
-				
-				this.webSocket = new WebSocket(this.url, this.protocols);
-				this.webSocket._url = this.url;
-				
-				this.emit("connecting");
-				
-				this.send = this.webSocket.send.bind(this.webSocket);
-				
-				this.webSocket.addEventListener("open", this.#handleWebSocketOpen);
-				this.webSocket.addEventListener("message", this.#handleWebSocketMessage);
-				this.webSocket.addEventListener("error", this.#handleWebSocketError);
-				this.webSocket.addEventListener("close", this.#handleWebSocketClose);
-				
-			});
+			this.send = this.webSocket.send.bind(this.webSocket);
+			
+			webSocketUrlWeakMap.set(this.webSocket, this.url);
+			
+			this.emit("connecting");
+			
 		});
 	}
 	
@@ -185,32 +183,32 @@ class InSiteWebSocket extends EventEmitter {
 		
 		return new Promise(resolve => {
 			if (this.isConnecting || this.isOpen) {
-				this.webSocket.addEventListener("close", resolve);
-				this.webSocket.close(code, reason);
+				this.webSocket!.addEventListener("close", resolve);
+				this.webSocket!.close(code, reason);
 			} else
-				resolve();
+				resolve(null);
 			
 		});
 	}
 	
 	disconnect = this.close;
 	
-	#queue = [];
+	#queue: string[] = [];
 	
 	#releaseQueue = () => {
 		
 		for (const message of this.#queue)
-			this.webSocket.send(message);
+			this.webSocket!.send(message);
 		
 		this.#queue.length = 0;
 		
 	};
 	
-	sendMessage(...args) {
+	sendMessage(...args: unknown[]) {
 		const message = JSON.stringify(args);
 		
 		if (this.isOpen)
-			this.webSocket.send(message);
+			this.webSocket!.send(message);
 		else {
 			if (!this.#queue.length)
 				this.once("open", this.#releaseQueue);
@@ -220,6 +218,16 @@ class InSiteWebSocket extends EventEmitter {
 		
 	}
 	
+	
+	static defib(this: InSiteWebSocket) {
+		
+		if (this.isOpen) {
+			if (process.env.NODE_ENV === "development")
+				console.info(`WebSocket ${this.name} has no heartbeat - going offline`);
+			
+			this.webSocket!.close();
+		}
+		
+	}
+	
 }
-
-export { InSiteWebSocket as WebSocket };

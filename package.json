@@ -1,16 +1,17 @@
 {
   "name": "insite-ws",
-  "version": "1.0.406",
+  "version": "2.0.0",
   "description": "inSite WebSockets",
   "type": "module",
   "exports": {
     "./server": "./dist/server.js",
     "./client": "./dist/client.js"
   },
-  "packageManager": "bun@1.1.12",
+  "packageManager": "bun@1.1.18",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "bun .conveyer.js"
+    "build": "bun .conveyer.js",
+    "postbuild": "tsc -p ./src/server && tsc -p ./src/client"
   },
   "repository": {
     "type": "git",
@@ -24,12 +25,14 @@
   "author": "Eugene Nesvetaev <dev@nesvet.dev> (https://nesvet.dev/)",
   "license": "MIT",
   "dependencies": {
-    "@nesvet/n": "^1",
-    "eventemitter3": "^5",
-    "ws": "^8"
+    "@nesvet/n": "^1.0.64",
+    "eventemitter3": "^5.0.1",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@nesvet/conveyer": "^2",
-    "@nesvet/eslint-config": "^2.0.21"
+    "@nesvet/conveyer": "^2.2.1",
+    "@nesvet/eslint-config": "^2.0.21",
+    "@types/node": "^20.14.9",
+    "@types/ws": "^8.5.10"
   }
 }

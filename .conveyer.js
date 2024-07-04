@@ -2,8 +2,6 @@ import path from "node:path";
 import { Conveyer, ESBuild } from "@nesvet/conveyer";
 
 
-const { NODE_ENV } = process.env;
-
 const distDir = "dist";
 
 const common = {
@@ -17,7 +15,7 @@ new Conveyer([
 	
 	new ESBuild({
 		title: "Server",
-		entryPoints: [ "src/server/index.js" ],
+		entryPoints: [ "src/server/index.ts" ],
 		outfile: path.resolve(distDir, "server.js"),
 		platform: "node",
 		target: "node20",
@@ -26,13 +24,10 @@ new Conveyer([
 	
 	new ESBuild({
 		title: "Client",
-		entryPoints: [ "src/client/index.js" ],
+		entryPoints: [ "src/client/index.ts" ],
 		outfile: path.resolve(distDir, "client.js"),
 		platform: "neutral",
 		target: "es2020",
-		define: {
-			"process.env.NODE_ENV": JSON.stringify(NODE_ENV)
-		},
 		...common
 	})
 	
