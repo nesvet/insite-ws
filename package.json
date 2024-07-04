@@ -1,9 +1,12 @@
 {
   "name": "insite-ws",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "inSite WebSockets",
   "type": "module",
+  "main": "./dist/server.js",
+  "module": "./dist/server.js",
   "exports": {
+    ".": "./dist/server.js",
     "./server": "./dist/server.js",
     "./client": "./dist/client.js"
   },
