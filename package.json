@@ -3,18 +3,15 @@
   "version": "2.0.1",
   "description": "inSite WebSockets",
   "type": "module",
-  "main": "./dist/server.js",
-  "module": "./dist/server.js",
   "exports": {
-    ".": "./dist/server.js",
-    "./server": "./dist/server.js",
-    "./client": "./dist/client.js"
+    "./server": "./dist/server/index.js",
+    "./client": "./dist/client/index.js"
   },
   "packageManager": "bun@1.1.18",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "bun .conveyer.js",
-    "postbuild": "tsc -p ./src/server && tsc -p ./src/client"
+    "postbuild": "tsc -p ."
   },
   "repository": {
     "type": "git",
