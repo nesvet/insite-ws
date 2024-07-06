@@ -34,6 +34,8 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 	}
 	
 	readonly isWebSocketServer = true;
+	readonly isWebSocketServerClient = false;
+	readonly isWebSocket = false;
 	
 	
 	static handleConnection(this: InSiteWebSocketServer, ws: InSiteWebSocketServerClient | WebSocket, request: http.IncomingMessage) {
@@ -57,6 +59,8 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 			
 			Object.assign(ws, {
 				isWebSocketServerClient: true,
+				isWebSocketServer: false,
+				isWebSocket: false,
 				[defibSymbol]: InSiteWebSocketServerClient.makeDefib.call(ws as InSiteWebSocketServerClient),
 				latency: 0,
 				[heartbeatIntervalSymbol]: InSiteWebSocketServerClient.makeHeartbeatInterval.call(ws as InSiteWebSocketServerClient),

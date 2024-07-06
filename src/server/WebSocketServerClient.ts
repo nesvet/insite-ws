@@ -24,6 +24,8 @@ export class InSiteWebSocketServerClient extends WebSocket {
 	}
 	
 	readonly isWebSocketServerClient = true;
+	readonly isWebSocketServer = false;
+	readonly isWebSocket = false;
 	
 	wss?: InSiteWebSocketServer;
 	

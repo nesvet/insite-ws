@@ -42,6 +42,8 @@ export class InSiteWebSocket extends EventEmitter {
 	}
 	
 	readonly isWebSocket = true;
+	readonly isWebSocketServer = false;
+	readonly isWebSocketServerClient = false;
 	
 	url: string;
 	
