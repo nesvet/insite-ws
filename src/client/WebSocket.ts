@@ -52,13 +52,13 @@ export class InSiteWebSocket extends EventEmitter {
 	readonly isWebSocketServer = false;
 	readonly isWebSocketServerClient = false;
 	
-	url: string;
+	url;
 	
-	name: string;
+	name;
 	
-	protocols?: string[];
+	protocols?;
 	
-	autoReconnect: boolean;
+	autoReconnect;
 	
 	send?(data: ArrayBufferLike | ArrayBufferView | Blob | string): void;
 	
