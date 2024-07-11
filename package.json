@@ -1,6 +1,6 @@
 {
   "name": "insite-ws",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "inSite WebSockets",
   "type": "module",
   "exports": {
@@ -25,13 +25,13 @@
   "author": "Eugene Nesvetaev <dev@nesvet.dev> (https://nesvet.dev/)",
   "license": "MIT",
   "dependencies": {
-    "@nesvet/n": "^1.0.64",
+    "@nesvet/n": "^1.0.66",
     "eventemitter3": "^5.0.1",
     "ws": "^8.18.0"
   },
   "devDependencies": {
     "@nesvet/conveyer": "^2.2.1",
-    "@nesvet/eslint-config": "^2.0.22",
+    "@nesvet/eslint-config": "^2.0.23",
     "@types/node": "^20.14.10",
     "@types/ws": "^8.5.10"
   }
