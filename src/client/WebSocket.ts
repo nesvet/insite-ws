@@ -1,6 +1,11 @@
 import EventEmitter from "eventemitter3";
-import { debounce, noop } from "@nesvet/n";
-import { heartbeatGap, heartbeatInterval } from "../common";
+import { debounce, noop, uid } from "@nesvet/n";
+import {
+	heartbeatGap,
+	heartbeatInterval,
+	requestHeaders,
+	type RequestListener
+} from "../common";
 import { Options } from "./types";
 
 
@@ -30,6 +35,8 @@ export class InSiteWebSocket extends EventEmitter {
 		this.protocols = protocols;
 		
 		this.autoReconnect = !!autoReconnect;
+		
+		this.on(`message:${requestHeaders.request}`, this.#handleRequest);
 		
 		if (on)
 			for (const eventName in on)
@@ -219,6 +226,73 @@ export class InSiteWebSocket extends EventEmitter {
 		}
 		
 	}
+	
+	sendRequest(...args: unknown[]) {
+		
+		const id = uid();
+		const eventName = `message:${requestHeaders.response}-${id}`;
+		
+		if (typeof args.at(-1) == "function") {
+			this.once(eventName, args.splice(-1, 1)[0] as () => void);
+			this.sendMessage(requestHeaders.request, id, ...args);
+			
+			return this;
+		}
+		
+		return new Promise((resolve, reject) => {
+			
+			this.once(eventName, (error, result) => {
+				if (error) {
+					const { message, ...restProps } = error;
+					reject(Object.assign(new Error(message), restProps));
+				} else
+					resolve(result);
+				
+			});
+			this.sendMessage(requestHeaders.request, id, ...args);
+			
+		});
+	}
+	
+	#requestListeners = new Map<string, RequestListener>();
+	
+	addRequestListener(kind: string, listener: RequestListener) {
+		this.#requestListeners.set(kind, listener);
+		
+		return this;
+	}
+	
+	onRequest = this.addRequestListener;
+	
+	removeRequestListener(kind: string) {
+		this.#requestListeners.delete(kind);
+		
+		return this;
+	}
+	
+	offRequest = this.removeRequestListener;
+	
+	#handleRequest = async (id: string, kind: string, ...rest: unknown[]) => {
+		const listener = this.#requestListeners.get(kind);
+		
+		let result;
+		let requestError = null;
+		
+		if (listener)
+			try {
+				result = await listener.apply(this, rest);
+			} catch (error) {
+				if (error instanceof Error) {
+					const { message, ...restProps } = error;
+					requestError = { message, ...restProps };
+				}
+			}
+		else
+			requestError = { message: `Unknown request kind "${kind}"` };
+		
+		this.sendMessage(`${requestHeaders.response}-${id}`, requestError, result);
+		
+	};
 	
 	
 	static defib(this: InSiteWebSocket) {
