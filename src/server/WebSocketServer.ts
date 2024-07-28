@@ -123,8 +123,8 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 		
 		Object.assign(wssc, {
 			wss: this,
-			userAgent: request.headers["user-agent"],
-			remoteAddress: request.headers["x-real-ip"] ?? request.headers["x-forwarded-for"] ?? "127.0.0.1"
+			userAgent: request.headers["user-agent"] ?? "",
+			remoteAddress: request.headers["x-real-ip"] ?? request.headers["x-forwarded-for"] ?? ""
 		});
 		
 		(wssc as InSiteWebSocketServerClient)[defibSymbol]();
