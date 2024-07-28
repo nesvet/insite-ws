@@ -6,4 +6,4 @@ export const requestHeaders = {
 	response: "~r-s"
 };
 
-export type RequestListener = (...args: unknown[]) => Promise<unknown> | unknown;
+export type RequestListener = (...args: any[]) => any | Promise<any>;// eslint-disable-line @typescript-eslint/no-explicit-any

@@ -148,8 +148,8 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 				const [ kind, ...rest ] = JSON.parse(message);
 				
 				this.emit(`message:${kind}`, ...rest);
-				this.wss!.emit("client-message", this, kind, ...rest);
-				this.wss!.emit(`client-message:${kind}`, this, ...rest);
+				this.wss.emit("client-message", this, kind, ...rest);
+				this.wss.emit(`client-message:${kind}`, this, ...rest);
 			} catch (error) {
 				InSiteWebSocketServer.handleClientError.call(this, error as Error);
 			}
@@ -167,7 +167,7 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 		if (process.env.NODE_ENV === "development")
 			console.error("WebSocketServer Client error", error);
 		
-		this.wss!.emit("client-error", this, error);
+		this.wss.emit("client-error", this, error);
 		
 	}
 	
@@ -179,8 +179,8 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 		this[defibSymbol].clear();
 		clearInterval(this[heartbeatIntervalSymbol]);
 		
-		this.wss!.emit("client-close", this);
-		this.wss!.emit("client-closed", this);
+		this.wss.emit("client-close", this);
+		this.wss.emit("client-closed", this);
 		
 	}
 	
