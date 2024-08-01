@@ -13,7 +13,7 @@ const reconnectTimeout = 2000;
 
 let i = 0;
 
-const webSocketUrlWeakMap = new WeakMap<WebSocket, string>();
+const webSocketUrlMap = new WeakMap<WebSocket, string>();
 
 
 export class InSiteWebSocket extends EventEmitter {
@@ -161,7 +161,7 @@ export class InSiteWebSocket extends EventEmitter {
 		if (options.protocols)
 			this.protocols = options.protocols;
 		
-		if (this.webSocket && webSocketUrlWeakMap.get(this.webSocket) !== this.url)
+		if (this.webSocket && webSocketUrlMap.get(this.webSocket) !== this.url)
 			this.emit("server-change");
 		
 		return new Promise((resolve, reject) => {
@@ -177,7 +177,7 @@ export class InSiteWebSocket extends EventEmitter {
 			
 			this.send = this.webSocket.send.bind(this.webSocket);
 			
-			webSocketUrlWeakMap.set(this.webSocket, this.url);
+			webSocketUrlMap.set(this.webSocket, this.url);
 			
 			this.emit("connecting");
 			
