@@ -1,15 +1,12 @@
-import http from "node:http";
-import https from "node:https";
 import WebSocket from "ws";
 
 
 export type Options = {
+	port: number | string;
 	ssl?: {
-		cert: string;
-		key: string;
+		cert: Buffer | string;
+		key: Buffer | string;
 	};
-	port: number;
-	server?: http.Server | https.Server;
 } & WebSocket.ServerOptions;
 
 export type CompatibleListener = () => void;

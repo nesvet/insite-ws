@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
 import WebSocket, { WebSocketServer } from "ws";
@@ -12,15 +13,31 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 		const {
 			ssl,
 			port,
-			server = ssl ? https.createServer({ ...ssl }) : http.createServer(),
 			...wssOptions
 		} = options;
 		
+		if (ssl) {
+			if (typeof ssl.cert == "string" && !/^-{3,}BEGIN/.test(ssl.cert))
+				try {
+					ssl.cert = fs.readFileSync(ssl.cert);
+				} catch {}
+			if (typeof ssl.key == "string" && !/^-{3,}BEGIN/.test(ssl.key))
+				try {
+					ssl.key = fs.readFileSync(ssl.key);
+				} catch {}
+		}
+		
+		const {
+			server = ssl ? https.createServer({ ...ssl }) : http.createServer()
+		} = wssOptions;
+		
 		super({
 			...wssOptions,
-			WebSocket: InSiteWebSocketServerClient,
-			server
+			server,
+			WebSocket: InSiteWebSocketServerClient
 		});
+		
+		this.port = typeof port == "string" ? Number.parseInt(port) : port;
 		
 		if (props)
 			if (typeof props == "function")
@@ -32,13 +49,15 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 		
 		this.on(`client-message:${requestHeaders.request}`, this.#handleRequest);
 		
-		server.listen(port, handleListen);
+		server.listen(this.port, handleListen);
 		
 	}
 	
 	readonly isWebSocketServer = true;
 	readonly isWebSocketServerClient = false;
 	readonly isWebSocket = false;
+	
+	readonly port;
 	
 	#requestListeners = new Map<string, RequestListener>();
 	
