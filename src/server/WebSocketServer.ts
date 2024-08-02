@@ -47,7 +47,7 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 		
 		this.on("connection", InSiteWebSocketServer.handleConnection as CompatibleListener);
 		
-		this.on(`client-message:${requestHeaders.request}`, this.#handleRequest);
+		this.on(`client-message:${requestHeaders.request}`, this.handleRequest);
 		
 		server.listen(this.port, handleListen);
 		
@@ -59,10 +59,10 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 	
 	readonly port;
 	
-	#requestListeners = new Map<string, RequestListener>();
+	private readonly requestListeners = new Map<string, RequestListener>();
 	
 	addRequestListener(kind: string, listener: RequestListener) {
-		this.#requestListeners.set(kind, listener);
+		this.requestListeners.set(kind, listener);
 		
 		return this;
 	}
@@ -70,15 +70,15 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 	onRequest = this.addRequestListener;
 	
 	removeRequestListener(kind: string) {
-		this.#requestListeners.delete(kind);
+		this.requestListeners.delete(kind);
 		
 		return this;
 	}
 	
 	offRequest = this.removeRequestListener;
 	
-	#handleRequest = async (wssc: InSiteWebSocketServerClient, id: string, kind: string, ...rest: unknown[]) => {
-		const listener = this.#requestListeners.get(kind);
+	private handleRequest = async (wssc: InSiteWebSocketServerClient, id: string, kind: string, ...rest: unknown[]) => {
+		const listener = this.requestListeners.get(kind);
 		
 		let result;
 		let requestError = null;

@@ -36,7 +36,7 @@ export class InSiteWebSocket extends EventEmitter {
 		
 		this.autoReconnect = !!autoReconnect;
 		
-		this.on(`message:${requestHeaders.request}`, this.#handleRequest);
+		this.on(`message:${requestHeaders.request}`, this.handleRequest);
 		
 		if (on)
 			for (const eventName in on)
@@ -54,7 +54,7 @@ export class InSiteWebSocket extends EventEmitter {
 	
 	url;
 	
-	name;
+	readonly name;
 	
 	protocols?;
 	
@@ -64,7 +64,7 @@ export class InSiteWebSocket extends EventEmitter {
 	
 	webSocket: null | WebSocket = null;
 	
-	#defib = debounce(InSiteWebSocket.defib, heartbeatInterval + heartbeatGap);
+	private defib = debounce(InSiteWebSocket.defib, heartbeatInterval + heartbeatGap);
 	
 	get isConnecting() {
 		return this.webSocket ? this.webSocket.readyState === this.webSocket.CONNECTING : null;
@@ -82,24 +82,24 @@ export class InSiteWebSocket extends EventEmitter {
 		return this.webSocket ? this.webSocket.readyState === this.webSocket.CLOSED : null;
 	}
 	
-	#openResolve?: (value?: unknown) => void;
-	#openReject?: (reason?: unknown) => void;
+	private openResolve?: (value?: unknown) => void;
+	private openReject?: (reason?: unknown) => void;
 	
-	#handleWebSocketOpen = () => {
+	private handleWebSocketOpen = () => {
 		
-		this.#openResolve!();
-		this.#openResolve = undefined;
-		this.#openReject = undefined;
+		this.openResolve!();
+		this.openResolve = undefined;
+		this.openReject = undefined;
 		
 		this.emit("open");
 		
-		this.#defib();
+		this.defib();
 		
 	};
 	
-	#handleWebSocketMessage = ({ data: message }: MessageEvent) => {
+	private handleWebSocketMessage = ({ data: message }: MessageEvent) => {
 		
-		this.#defib();
+		this.defib();
 		
 		if (message)
 			try {
@@ -108,35 +108,35 @@ export class InSiteWebSocket extends EventEmitter {
 				this.emit("message", kind, ...rest);
 				this.emit(`message:${kind}`, ...rest);
 			} catch (error) {
-				this.#handleWebSocketError(error as Error);
+				this.handleWebSocketError(error as Error);
 			}
 		else
 			this.webSocket!.send("");
 		
 	};
 	
-	#handleWebSocketError = (error: Error | Event | undefined) => {
+	private handleWebSocketError = (error: Error | Event | undefined) => {
 		if (error instanceof Event)
 			error = undefined;
 		
-		if (this.#openReject) {
-			this.#openReject(error);
-			this.#openResolve = undefined;
-			this.#openReject = undefined;
+		if (this.openReject) {
+			this.openReject(error);
+			this.openResolve = undefined;
+			this.openReject = undefined;
 		}
 		
 		this.emit("error", error);
 		
 	};
 	
-	#reconnectTimeout?: number;
+	private reconnectTimeout?: number;
 	
-	#handleWebSocketClose = (event: CloseEvent) => {
+	private handleWebSocketClose = (event: CloseEvent) => {
 		
 		if (process.env.NODE_ENV === "development")
 			console.info(`WebSocket ${this.name} is closed with code ${event.code} and reason "${event.reason}"`);
 		
-		this.#defib.clear();
+		this.defib.clear();
 		
 		this.emit("close", event);
 		
@@ -144,14 +144,14 @@ export class InSiteWebSocket extends EventEmitter {
 			if (process.env.NODE_ENV === "development")
 				console.info(`WebSocket ${this.name} will try to reconnect in 2 sec…`);
 			
-			this.#reconnectTimeout = setTimeout(() => this.open().catch(noop), reconnectTimeout) as unknown as number;
+			this.reconnectTimeout = setTimeout(() => this.open().catch(noop), reconnectTimeout) as unknown as number;
 		}
 		
 	};
 	
 	async open(options: Options = {}) {
 		
-		clearTimeout(this.#reconnectTimeout);
+		clearTimeout(this.reconnectTimeout);
 		
 		await this.close(4000, "reopen");
 		
@@ -165,15 +165,15 @@ export class InSiteWebSocket extends EventEmitter {
 			this.emit("server-change");
 		
 		return new Promise((resolve, reject) => {
-			this.#openResolve = resolve;
-			this.#openReject = reject;
+			this.openResolve = resolve;
+			this.openReject = reject;
 			
 			this.webSocket = new WebSocket(this.url, this.protocols);
 			
-			this.webSocket.addEventListener("open", this.#handleWebSocketOpen);
-			this.webSocket.addEventListener("message", this.#handleWebSocketMessage);
-			this.webSocket.addEventListener("error", this.#handleWebSocketError);
-			this.webSocket.addEventListener("close", this.#handleWebSocketClose);
+			this.webSocket.addEventListener("open", this.handleWebSocketOpen);
+			this.webSocket.addEventListener("message", this.handleWebSocketMessage);
+			this.webSocket.addEventListener("error", this.handleWebSocketError);
+			this.webSocket.addEventListener("close", this.handleWebSocketClose);
 			
 			this.send = this.webSocket.send.bind(this.webSocket);
 			
@@ -188,7 +188,7 @@ export class InSiteWebSocket extends EventEmitter {
 	
 	close(code = 3500, reason = "manual") {
 		
-		clearTimeout(this.#reconnectTimeout);
+		clearTimeout(this.reconnectTimeout);
 		
 		return new Promise(resolve => {
 			if (this.isConnecting || this.isOpen) {
@@ -202,14 +202,14 @@ export class InSiteWebSocket extends EventEmitter {
 	
 	disconnect = this.close;
 	
-	#queue: string[] = [];
+	private queue: string[] = [];
 	
-	#releaseQueue = () => {
+	private releaseQueue = () => {
 		
-		for (const message of this.#queue)
+		for (const message of this.queue)
 			this.webSocket!.send(message);
 		
-		this.#queue.length = 0;
+		this.queue.length = 0;
 		
 	};
 	
@@ -219,10 +219,10 @@ export class InSiteWebSocket extends EventEmitter {
 		if (this.isOpen)
 			this.webSocket!.send(message);
 		else {
-			if (!this.#queue.length)
-				this.once("open", this.#releaseQueue);
+			if (!this.queue.length)
+				this.once("open", this.releaseQueue);
 			
-			this.#queue.push(message);
+			this.queue.push(message);
 		}
 		
 	}
@@ -254,10 +254,10 @@ export class InSiteWebSocket extends EventEmitter {
 		});
 	}
 	
-	#requestListeners = new Map<string, RequestListener>();
+	private requestListeners = new Map<string, RequestListener>();
 	
 	addRequestListener(kind: string, listener: RequestListener) {
-		this.#requestListeners.set(kind, listener);
+		this.requestListeners.set(kind, listener);
 		
 		return this;
 	}
@@ -265,15 +265,15 @@ export class InSiteWebSocket extends EventEmitter {
 	onRequest = this.addRequestListener;
 	
 	removeRequestListener(kind: string) {
-		this.#requestListeners.delete(kind);
+		this.requestListeners.delete(kind);
 		
 		return this;
 	}
 	
 	offRequest = this.removeRequestListener;
 	
-	#handleRequest = async (id: string, kind: string, ...rest: unknown[]) => {
-		const listener = this.#requestListeners.get(kind);
+	private handleRequest = async (id: string, kind: string, ...rest: unknown[]) => {
+		const listener = this.requestListeners.get(kind);
 		
 		let result;
 		let requestError = null;
