@@ -1,6 +1,6 @@
 {
   "name": "insite-ws",
-  "version": "2.0.9",
+  "version": "2.0.10",
   "description": "inSite WebSockets",
   "type": "module",
   "exports": {
