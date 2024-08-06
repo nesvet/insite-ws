@@ -1,15 +1,31 @@
 import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
-import WebSocket, { WebSocketServer } from "ws";
-import { requestHeaders, type RequestListener } from "../common";
+import type { RawData, WebSocket, WebSocketServer } from "ws";
+import { requestHeaders } from "../common";
 import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
-import { CompatibleListener, Options } from "./types";
 import { InSiteWebSocketServerClient } from "./WebSocketServerClient";
+import type { Options } from "./types";
 
 
-export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocketServerClient> {
-	constructor(options: Options, props?: Record<string, unknown>, handleListen?: (() => void)) {
+type RequestListener<WSSC extends InSiteWebSocketServerClient> = (wscc: WSSC, ...args: any[]) => any | Promise<any>;// eslint-disable-line @typescript-eslint/no-explicit-any
+
+declare abstract class PrepareWebSocketServer<WSSC extends InSiteWebSocketServerClient> extends WebSocketServer<typeof InSiteWebSocketServerClient> {
+	on(event: "connection", callback: (this: InSiteWebSocketServer<WSSC>, socket: WSSC, request: http.IncomingMessage) => void): this;
+	on(event: "error", callback: (this: InSiteWebSocketServer<WSSC>, error: Error) => void): this;
+	on(event: "headers", callback: (this: InSiteWebSocketServer<WSSC>, headers: string[], request: http.IncomingMessage) => void): this;
+	on(event: "close" | "listening", callback: (this: InSiteWebSocketServer<WSSC>) => void): this;
+	
+	on(event: "client-connect", listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, request: http.IncomingMessage) => void): this;
+	on(event: "client-error", listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, error: Error | undefined) => void): this;
+	on(event: `client-${string}`, listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, ...args: any[]) => void): this;// eslint-disable-line @typescript-eslint/no-explicit-any
+	
+	on(event: string | symbol, listener: (this: InSiteWebSocketServer<WSSC>, ...args: any[]) => void): this;// eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+
+export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = InSiteWebSocketServerClient> extends PrepareWebSocketServer<WSSC> {
+	constructor(options: Options<WSSC>, props?: Record<string, unknown>, handleListen?: (() => void)) {
 		const {
 			ssl,
 			port,
@@ -32,9 +48,9 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 		} = wssOptions;
 		
 		super({
+			WebSocket: InSiteWebSocketServerClient<WSSC>,
 			...wssOptions,
-			server,
-			WebSocket: InSiteWebSocketServerClient
+			server
 		});
 		
 		this.port = typeof port == "string" ? Number.parseInt(port) : port;
@@ -45,7 +61,7 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 			else
 				Object.assign(this, props);
 		
-		this.on("connection", InSiteWebSocketServer.handleConnection as CompatibleListener);
+		this.on("connection", this.handleConnection);
 		
 		this.on(`client-message:${requestHeaders.request}`, this.handleRequest);
 		
@@ -59,9 +75,9 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 	
 	readonly port;
 	
-	private readonly requestListeners = new Map<string, RequestListener>();
+	private readonly requestListeners = new Map<string, RequestListener<WSSC>>();
 	
-	addRequestListener(kind: string, listener: RequestListener) {
+	addRequestListener(kind: string, listener: RequestListener<WSSC>) {
 		this.requestListeners.set(kind, listener);
 		
 		return this;
@@ -77,7 +93,7 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 	
 	offRequest = this.removeRequestListener;
 	
-	private handleRequest = async (wssc: InSiteWebSocketServerClient, id: string, kind: string, ...rest: unknown[]) => {
+	private handleRequest = async (wssc: WSSC, id: string, kind: string, ...rest: unknown[]) => {
 		const listener = this.requestListeners.get(kind);
 		
 		let result;
@@ -99,8 +115,7 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 		
 	};
 	
-	
-	static handleConnection(this: InSiteWebSocketServer, wssc: InSiteWebSocketServerClient | WebSocket, request: http.IncomingMessage) {
+	private handleConnection(wssc: WSSC, request: http.IncomingMessage) {
 		if (!(wssc instanceof InSiteWebSocketServerClient)) { /* Compatibility with Bun */
 			Object.defineProperties(wssc, {
 				isConnecting: {
@@ -117,15 +132,15 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 				}
 			});
 			
-			const { terminate } = wssc;
+			const { terminate } = wssc as WebSocket;
 			
 			Object.assign(wssc, {
 				isWebSocketServerClient: true,
 				isWebSocketServer: false,
 				isWebSocket: false,
-				[defibSymbol]: InSiteWebSocketServerClient.makeDefib.call(wssc as InSiteWebSocketServerClient),
+				[defibSymbol]: InSiteWebSocketServerClient.makeDefib.call(wssc),
 				latency: 0,
-				[heartbeatIntervalSymbol]: InSiteWebSocketServerClient.makeHeartbeatInterval.call(wssc as InSiteWebSocketServerClient),
+				[heartbeatIntervalSymbol]: InSiteWebSocketServerClient.makeHeartbeatInterval.call(wssc),
 				sendMessage: InSiteWebSocketServerClient.prototype.sendMessage,
 				sendRequest: InSiteWebSocketServerClient.prototype.sendRequest,
 				terminate() { /* Workaround Bun's WebSocket#terminate bug */
@@ -146,60 +161,60 @@ export class InSiteWebSocketServer extends WebSocketServer<typeof InSiteWebSocke
 			remoteAddress: request.headers["x-real-ip"] ?? request.headers["x-forwarded-for"] ?? ""
 		});
 		
-		(wssc as InSiteWebSocketServerClient)[defibSymbol]();
+		wssc[defibSymbol]();
 		
-		wssc.on("message", InSiteWebSocketServer.handleClientMessage as CompatibleListener);
-		wssc.on("error", InSiteWebSocketServer.handleClientError as CompatibleListener);
-		wssc.on("close", InSiteWebSocketServer.handleClientClose as CompatibleListener);
+		wssc.on("message", data => this.handleClientMessage(wssc, data));
+		wssc.on("error", error => this.handleClientError(wssc, error));
+		wssc.on("close", (...args) => this.handleClientClose(wssc, ...args));
 		
 		this.emit("client-connect", wssc, request);
 		
 	}
 	
 	
-	static handleClientMessage(this: InSiteWebSocketServerClient, data: WebSocket.RawData) {
+	private handleClientMessage(wssc: WSSC, data: RawData) {
 		const message = data.toString();
 		
-		this[defibSymbol]();
+		wssc[defibSymbol]();
 		
 		if (message)
 			try {
 				const [ kind, ...rest ] = JSON.parse(message);
 				
-				this.emit(`message:${kind}`, ...rest);
-				this.wss.emit("client-message", this, kind, ...rest);
-				this.wss.emit(`client-message:${kind}`, this, ...rest);
+				wssc.emit(`message:${kind}`, ...rest);
+				this.emit("client-message", wssc, kind, ...rest);
+				this.emit(`client-message:${kind}`, wssc, ...rest);
 			} catch (error) {
-				InSiteWebSocketServer.handleClientError.call(this, error as Error);
+				this.handleClientError(wssc, error as Error);
 			}
-		else if (this[pingTsSymbol]) {
-			this.latency = Date.now() - this[pingTsSymbol];
-			delete this[pingTsSymbol];
+		else if (wssc[pingTsSymbol]) {
+			wssc.latency = Date.now() - wssc[pingTsSymbol];
+			delete wssc[pingTsSymbol];
 		}
 		
 	}
 	
-	static handleClientError(this: InSiteWebSocketServerClient, error: Error | Event | undefined) {
+	private handleClientError(wssc: WSSC, error: Error | Event | undefined) {
 		if (error instanceof Event)
 			error = undefined;
 		
 		if (process.env.NODE_ENV === "development")
 			console.error("WebSocketServer Client error", error);
 		
-		this.wss.emit("client-error", this, error);
+		this.emit("client-error", wssc, error);
 		
 	}
 	
-	static handleClientClose(this: InSiteWebSocketServerClient, ...args: unknown[]) {
+	private handleClientClose(wssc: WSSC, ...args: unknown[]) {
 		
 		if (process.env.NODE_ENV === "development")
 			console.info("WebSocketServer Client closed", ...args);
 		
-		this[defibSymbol].clear();
-		clearInterval(this[heartbeatIntervalSymbol]);
+		wssc[defibSymbol].clear();
+		clearInterval(wssc[heartbeatIntervalSymbol]);
 		
-		this.wss.emit("client-close", this);
-		this.wss.emit("client-closed", this);
+		this.emit("client-close", wssc);
+		this.emit("client-closed", wssc);
 		
 	}
 	
