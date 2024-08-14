@@ -5,7 +5,6 @@ import { Conveyer, ESBuild } from "@nesvet/conveyer";
 const distDir = "dist";
 
 const common = {
-	external: true,
 	format: "esm",
 	sourcemap: true
 };
@@ -17,6 +16,7 @@ new Conveyer([
 		title: "Server",
 		entryPoints: [ "src/server/index.ts" ],
 		outfile: path.resolve(distDir, "server/index.js"),
+		external: [ true, "insite-*" ],
 		platform: "node",
 		target: "node20",
 		...common
@@ -26,6 +26,7 @@ new Conveyer([
 		title: "Client",
 		entryPoints: [ "src/client/index.ts" ],
 		outfile: path.resolve(distDir, "client/index.js"),
+		external: true,
 		platform: "neutral",
 		target: "es2020",
 		...common
