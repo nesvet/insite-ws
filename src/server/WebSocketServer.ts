@@ -1,30 +1,20 @@
 import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
-import type { RawData, WebSocket, WebSocketServer } from "ws";
+import { type RawData, type WebSocket, WebSocketServer } from "ws";
 import { requestHeaders } from "../common";
 import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
 import { InSiteWebSocketServerClient } from "./WebSocketServerClient";
 import type { Options } from "./types";
 
 
-type RequestListener<WSSC extends InSiteWebSocketServerClient> = (wscc: WSSC, ...args: any[]) => any | Promise<any>;// eslint-disable-line @typescript-eslint/no-explicit-any
-
-declare abstract class PrepareWebSocketServer<WSSC extends InSiteWebSocketServerClient> extends WebSocketServer<typeof InSiteWebSocketServerClient> {
-	on(event: "connection", callback: (this: InSiteWebSocketServer<WSSC>, socket: WSSC, request: http.IncomingMessage) => void): this;
-	on(event: "error", callback: (this: InSiteWebSocketServer<WSSC>, error: Error) => void): this;
-	on(event: "headers", callback: (this: InSiteWebSocketServer<WSSC>, headers: string[], request: http.IncomingMessage) => void): this;
-	on(event: "close" | "listening", callback: (this: InSiteWebSocketServer<WSSC>) => void): this;
-	
-	on(event: "client-connect", listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, request: http.IncomingMessage) => void): this;
-	on(event: "client-error", listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, error: Error | undefined) => void): this;
-	on(event: `client-${string}`, listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, ...args: any[]) => void): this;// eslint-disable-line @typescript-eslint/no-explicit-any
-	
-	on(event: string | symbol, listener: (this: InSiteWebSocketServer<WSSC>, ...args: any[]) => void): this;// eslint-disable-line @typescript-eslint/no-explicit-any
-}
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 
-export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = InSiteWebSocketServerClient> extends PrepareWebSocketServer<WSSC> {
+type RequestListener<WSSC extends InSiteWebSocketServerClient> = (wscc: WSSC, ...args: any[]) => any | Promise<any>;
+
+
+export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = InSiteWebSocketServerClient> extends WebSocketServer<typeof InSiteWebSocketServerClient> {
 	constructor(options: Options<WSSC>, props?: Record<string, unknown>, handleListen?: (() => void)) {
 		const {
 			ssl,
@@ -67,6 +57,20 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 		
 		server.listen(this.port, handleListen);
 		
+	}
+	
+	on(event: "connection", callback: (this: InSiteWebSocketServer<WSSC>, socket: WSSC, request: http.IncomingMessage) => void): this;
+	on(event: "error", callback: (this: InSiteWebSocketServer<WSSC>, error: Error) => void): this;
+	on(event: "headers", callback: (this: InSiteWebSocketServer<WSSC>, headers: string[], request: http.IncomingMessage) => void): this;
+	on(event: "close" | "listening", callback: (this: InSiteWebSocketServer<WSSC>) => void): this;
+	
+	on(event: "client-connect", listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, request: http.IncomingMessage) => void): this;
+	on(event: "client-error", listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, error: Error | undefined) => void): this;
+	on(event: `client-${string}`, listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, ...args: any[]) => void): this;
+	
+	on(event: string | symbol, listener: (this: InSiteWebSocketServer<WSSC>, ...args: any[]) => void): this;
+	on(event: string | symbol, listener: (this: InSiteWebSocketServer<WSSC>, ...args: any[]) => void): this {
+		return super.on(event, listener as unknown as (this: WebSocketServer, ...args: any[]) => void);
 	}
 	
 	readonly isWebSocketServer = true;

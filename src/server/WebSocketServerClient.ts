@@ -6,22 +6,21 @@ import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
 import { InSiteWebSocketServer } from "./WebSocketServer";
 
 
-declare abstract class PrepareWebSocket<WSSC extends InSiteWebSocketServerClient = InSiteWebSocketServerClient> extends WebSocket {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+
+export class InSiteWebSocketServerClient<WSSC extends InSiteWebSocketServerClient = any> extends WebSocket {
 	on(event: "close", listener: (this: WSSC, code: number, reason: Buffer) => void): this;
 	on(event: "error", listener: (this: WSSC, error: Error) => void): this;
 	on(event: "upgrade", listener: (this: WSSC, request: IncomingMessage) => void): this;
 	on(event: "message", listener: (this: WSSC, data: RawData, isBinary: boolean) => void): this;
 	on(event: "open", listener: (this: WSSC) => void): this;
 	on(event: "ping" | "pong", listener: (this: WSSC, data: Buffer) => void): this;
-	on(
-		event: "unexpected-response",
-		listener: (this: WSSC, request: ClientRequest, response: IncomingMessage) => void,
-	): this;
-	on(event: string | symbol, listener: (this: WSSC, ...args: unknown[]) => void): this;
-}
-
-
-export class InSiteWebSocketServerClient<WSSC extends InSiteWebSocketServerClient = any> extends PrepareWebSocket<WSSC> {// eslint-disable-line @typescript-eslint/no-explicit-any
+	on(event: "unexpected-response", listener: (this: WSSC, request: ClientRequest, response: IncomingMessage) => void): this;
+	on(event: string | symbol, listener: (this: WSSC, ...args: any[]) => void): this;
+	on(event: string | symbol, listener: (this: WSSC, ...args: any[]) => void): this {
+		return super.on(event, listener as (this: WebSocket, ...args: any[]) => void);
+	}
 	
 	get isConnecting() {
 		return this.readyState === this.CONNECTING;
@@ -89,11 +88,11 @@ export class InSiteWebSocketServerClient<WSSC extends InSiteWebSocketServerClien
 	}
 	
 	
-	static makeDefib(this: InSiteWebSocketServerClient<any>) { // eslint-disable-line @typescript-eslint/no-explicit-any
+	static makeDefib(this: InSiteWebSocketServerClient<any>) {
 		return debounce(() => this.terminate(), heartbeatInterval + heartbeatGap);
 	}
 	
-	static makeHeartbeatInterval(this: InSiteWebSocketServerClient<any>) { // eslint-disable-line @typescript-eslint/no-explicit-any
+	static makeHeartbeatInterval(this: InSiteWebSocketServerClient<any>) {
 		return setInterval(() => {
 			
 			this[pingTsSymbol] = Date.now();
