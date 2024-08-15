@@ -7,7 +7,7 @@
     "./server": "./dist/server/index.js",
     "./client": "./dist/client/index.js"
   },
-  "packageManager": "bun@1.1.23",
+  "packageManager": "bun@1.1.24",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "bun .conveyer.ts",
