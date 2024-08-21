@@ -1,7 +1,6 @@
 import EventEmitter from "eventemitter3";
 import { debounce, noop, uid } from "@nesvet/n";
 import { heartbeatGap, heartbeatInterval, requestHeaders } from "../common";
-import { Options } from "./types";
 
 
 const reconnectTimeout = 2000;
@@ -10,8 +9,16 @@ let i = 0;
 
 const webSocketUrlMap = new WeakMap<WebSocket, string>();
 
+export type Options = {
+	url?: string;
+	name?: string;
+	protocols?: string[];
+	immediately?: boolean;
+	autoReconnect?: boolean;
+	on?: Record<string, (...args: any[]) => void>;// eslint-disable-line @typescript-eslint/no-explicit-any
+};
 
-export type RequestListener = (...args: any[]) => any | Promise<any>;// eslint-disable-line @typescript-eslint/no-explicit-any
+type RequestListener = (...args: any[]) => any | Promise<any>;// eslint-disable-line @typescript-eslint/no-explicit-any
 
 
 export class InSiteWebSocket extends EventEmitter {
