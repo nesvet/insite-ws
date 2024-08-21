@@ -22,12 +22,11 @@ type RequestListener = (...args: any[]) => any | Promise<any>;// eslint-disable-
 
 
 export class InSiteWebSocket extends EventEmitter {
-	constructor(url: string, options: Options = {}) {
+	constructor(options: Options = {}) {
 		super();
 		
-		this.url = url;
-		
 		const {
+			url,
 			name = (i++).toString(),
 			protocols,
 			immediately = true,
@@ -35,6 +34,7 @@ export class InSiteWebSocket extends EventEmitter {
 			on
 		} = options;
 		
+		this.url = url;
 		this.name = name;
 		
 		this.protocols = protocols;
@@ -170,21 +170,27 @@ export class InSiteWebSocket extends EventEmitter {
 			this.emit("server-change");
 		
 		return new Promise((resolve, reject) => {
-			this.openResolve = resolve;
-			this.openReject = reject;
-			
-			this.webSocket = new WebSocket(this.url, this.protocols);
-			
-			this.webSocket.addEventListener("open", this.handleWebSocketOpen);
-			this.webSocket.addEventListener("message", this.handleWebSocketMessage);
-			this.webSocket.addEventListener("error", this.handleWebSocketError);
-			this.webSocket.addEventListener("close", this.handleWebSocketClose);
-			
-			this.send = this.webSocket.send.bind(this.webSocket);
-			
-			webSocketUrlMap.set(this.webSocket, this.url);
-			
-			this.emit("connecting");
+			if (this.url) {
+				this.openResolve = resolve;
+				this.openReject = reject;
+				
+				this.webSocket = new WebSocket(this.url, this.protocols);
+				
+				this.webSocket.addEventListener("open", this.handleWebSocketOpen);
+				this.webSocket.addEventListener("message", this.handleWebSocketMessage);
+				this.webSocket.addEventListener("error", this.handleWebSocketError);
+				this.webSocket.addEventListener("close", this.handleWebSocketClose);
+				
+				this.send = this.webSocket.send.bind(this.webSocket);
+				
+				webSocketUrlMap.set(this.webSocket, this.url);
+				
+				this.emit("connecting");
+			} else {
+				this.webSocket = null;
+				delete this.send;
+				reject(new Error("url prop is not set"));
+			}
 			
 		});
 	}
