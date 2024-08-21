@@ -7,10 +7,10 @@ const reconnectTimeout = 2000;
 
 let i = 0;
 
-const webSocketUrlMap = new WeakMap<WebSocket, string>();
+const webSocketUrlMap = new WeakMap<WebSocket, string | URL>();
 
 export type Options = {
-	url?: string;
+	url?: string | URL;
 	name?: string;
 	protocols?: string[];
 	immediately?: boolean;
@@ -87,14 +87,14 @@ export class InSiteWebSocket extends EventEmitter {
 		return this.webSocket ? this.webSocket.readyState === this.webSocket.CLOSED : null;
 	}
 	
-	private openResolve?: (value?: unknown) => void;
+	private openResolve?: () => void;
 	private openReject?: (reason?: unknown) => void;
 	
 	private handleWebSocketOpen = () => {
 		
 		this.openResolve!();
-		this.openResolve = undefined;
-		this.openReject = undefined;
+		delete this.openResolve;
+		delete this.openReject;
 		
 		this.emit("open");
 		
@@ -126,8 +126,8 @@ export class InSiteWebSocket extends EventEmitter {
 		
 		if (this.openReject) {
 			this.openReject(error);
-			this.openResolve = undefined;
-			this.openReject = undefined;
+			delete this.openResolve;
+			delete this.openReject;
 		}
 		
 		this.emit("error", error);
@@ -154,7 +154,7 @@ export class InSiteWebSocket extends EventEmitter {
 		
 	};
 	
-	async open(options: Options = {}) {
+	async open(options: Options = {}): Promise<void> {
 		
 		clearTimeout(this.reconnectTimeout);
 		
