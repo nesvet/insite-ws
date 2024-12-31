@@ -4,6 +4,7 @@ import https from "node:https";
 import { type RawData, type WebSocket, WebSocketServer } from "ws";
 import { requestHeaders } from "../common";
 import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
+import { getRemoteAddress } from "./utils";
 import { InSiteWebSocketServerClient } from "./WebSocketServerClient";
 import type { Options } from "./types";
 
@@ -162,7 +163,7 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 		Object.assign(wssc, {
 			wss: this,
 			userAgent: request.headers["user-agent"] ?? "",
-			remoteAddress: request.headers["x-real-ip"] ?? request.headers["x-forwarded-for"] ?? ""
+			remoteAddress: getRemoteAddress(request)
 		});
 		
 		wssc[defibSymbol]();
