@@ -112,6 +112,8 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 					const { message, ...restProps } = error;
 					requestError = { message, ...restProps };
 				}
+				if (process.env.NODE_ENV === "development")
+					console.error(`WebSocketServer request "${kind}" (${id}) error: `, error);
 			}
 		else
 			requestError = { message: `Unknown request kind "${kind}"` };
@@ -210,10 +212,10 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 		
 	}
 	
-	private handleClientClose(wssc: WSSC, ...args: unknown[]) {
+	private handleClientClose(wssc: WSSC, code: number, reason: Buffer) {
 		
 		if (process.env.NODE_ENV === "development")
-			console.info("WebSocketServer Client closed", ...args);
+			console.info(`WebSocketServer Client closed ${code ? `with code ${code}` : ""} ${code && reason ? "and " : ""}${reason ? `reason "${reason.toString()}"` : ""}`);
 		
 		wssc[defibSymbol].clear();
 		clearInterval(wssc[heartbeatIntervalSymbol]);
