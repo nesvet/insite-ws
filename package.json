@@ -10,7 +10,7 @@
   "packageManager": "bun@1.1.33",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "bun .conveyer.ts",
+    "build": "bun .conveyer.js",
     "postbuild": "tsc -p ."
   },
   "repository": {
