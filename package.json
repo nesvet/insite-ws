@@ -7,7 +7,7 @@
     "./server": "./dist/server/index.js",
     "./client": "./dist/client/index.js"
   },
-  "packageManager": "bun@1.1.36",
+  "packageManager": "bun@1.1.43",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "bun .conveyer.js",
@@ -32,8 +32,8 @@
   "devDependencies": {
     "@nesvet/conveyer": "^2.2.5",
     "@nesvet/eslint-config": "^2.0.34",
-    "@types/node": "^22.10.2",
+    "@types/node": "^22.10.5",
     "@types/ws": "^8.5.13",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.3"
   }
 }
