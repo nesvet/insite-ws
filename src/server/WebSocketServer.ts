@@ -18,25 +18,11 @@ type RequestListener<WSSC extends InSiteWebSocketServerClient> = (wscc: WSSC, ..
 export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = InSiteWebSocketServerClient> extends WebSocketServer<typeof InSiteWebSocketServerClient> {
 	constructor(options: Options<WSSC>, props?: Record<string, unknown>, handleListen?: (() => void)) {
 		const {
-			ssl,
+			ssl: _,
 			port,
+			server = createServer(InSiteWebSocketServer.makeProps(options)),
 			...wssOptions
 		} = options;
-		
-		if (ssl) {
-			if (typeof ssl.cert == "string" && !/^-{3,}BEGIN/.test(ssl.cert))
-				try {
-					ssl.cert = fs.readFileSync(ssl.cert);
-				} catch {}
-			if (typeof ssl.key == "string" && !/^-{3,}BEGIN/.test(ssl.key))
-				try {
-					ssl.key = fs.readFileSync(ssl.key);
-				} catch {}
-		}
-		
-		const {
-			server = ssl ? https.createServer({ ...ssl }) : http.createServer()
-		} = wssOptions;
 		
 		super({
 			WebSocket: InSiteWebSocketServerClient<WSSC>,
@@ -223,6 +209,13 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 		this.emit("client-close", wssc);
 		this.emit("client-closed", wssc);
 		
+	}
+	
+	
+	static makeProps<SWSSC extends InSiteWebSocketServerClient>({ ssl }: Options<SWSSC>): http.ServerOptions | https.ServerOptions {
+		return {
+			...resolveSSL(ssl)
+		};
 	}
 	
 }
