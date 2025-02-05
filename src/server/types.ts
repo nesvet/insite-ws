@@ -2,15 +2,20 @@ import type { ServerOptions } from "ws";
 import type { InSiteWebSocketServerClient } from "./WebSocketServerClient";
 
 
-export type Options<WSSC extends InSiteWebSocketServerClient> = {
-	port: number | string;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+
+export type Options<WSSC extends InSiteWebSocketServerClient> = Omit<ServerOptions<typeof InSiteWebSocketServerClient>, "port"> & {
 	ssl?: {
 		cert: Buffer | string;
 		key: Buffer | string;
 	};
-	WebSocket?: {
-		new (...args: any[]): WSSC;// eslint-disable-line @typescript-eslint/no-explicit-any
-	} & typeof InSiteWebSocketServerClient;
-} & Omit<ServerOptions, "port">;
+	port?: number | string;
+	WebSocket?: typeof InSiteWebSocketServerClient & {
+		new (...args: any[]): WSSC;
+	};
+};
+
+export type RequestListener<WSSC extends InSiteWebSocketServerClient> = (wscc: WSSC, ...args: any[]) => any | Promise<any>;
 
 export type CompatibleListener = () => void;

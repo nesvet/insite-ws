@@ -8,19 +8,25 @@ import {
 import { heartbeatGap, heartbeatInterval, requestHeaders } from "../common";
 
 
+declare global {
+	var __insite: { // eslint-disable-line no-var
+		wss_url?: string;
+	} | undefined;
+}
+
 let i = 0;
 
 export type Options = {
-	url?: string | URL;
+	url?: URL | string;
 	name?: string;
 	protocols?: string[];
 	immediately?: boolean;
-	reconnectAfter?: null | number;
+	reconnectAfter?: number | null;
 	on?: Record<string, (...args: any[]) => void>;// eslint-disable-line @typescript-eslint/no-explicit-any
 	quiet?: boolean;
 };
 
-type RequestListener = (...args: any[]) => any | Promise<any>;// eslint-disable-line @typescript-eslint/no-explicit-any
+type RequestListener = (...args: any[]) => Promise<any> | any;// eslint-disable-line @typescript-eslint/no-explicit-any
 
 
 export class InSiteWebSocket extends EventEmitter {
@@ -28,7 +34,7 @@ export class InSiteWebSocket extends EventEmitter {
 		super();
 		
 		const {
-			url,
+			url = globalThis.__insite?.wss_url ?? "/",
 			name = (i++).toString(),
 			protocols,
 			immediately = true,
@@ -77,7 +83,7 @@ export class InSiteWebSocket extends EventEmitter {
 	
 	send?(data: ArrayBufferLike | ArrayBufferView | Blob | string): void;
 	
-	webSocket: null | WebSocket = null;
+	webSocket: WebSocket | null = null;
 	
 	#defib = debounce(InSiteWebSocket.defib, heartbeatInterval + heartbeatGap);
 	
@@ -179,7 +185,7 @@ export class InSiteWebSocket extends EventEmitter {
 		
 		await this.close(4000, "reopen");
 		
-		let prevURL: string | undefined | URL;
+		let prevURL: URL | string | undefined;
 		if (options.url && this.url !== options.url) {
 			prevURL = this.url;
 			this.url = options.url;

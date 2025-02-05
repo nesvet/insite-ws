@@ -1,22 +1,19 @@
-import fs from "node:fs";
-import http from "node:http";
-import https from "node:https";
+import type http from "node:http";
+import type https from "node:https";
 import { type RawData, type WebSocket, WebSocketServer } from "ws";
+import { createServer, resolveSSL, showServerListeningMessage } from "insite-common/backend";
 import { requestHeaders } from "../common";
 import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
 import { getRemoteAddress } from "./utils";
 import { InSiteWebSocketServerClient } from "./WebSocketServerClient";
-import type { Options } from "./types";
+import type { Options, RequestListener } from "./types";
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 
-type RequestListener<WSSC extends InSiteWebSocketServerClient> = (wscc: WSSC, ...args: any[]) => any | Promise<any>;
-
-
 export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = InSiteWebSocketServerClient> extends WebSocketServer<typeof InSiteWebSocketServerClient> {
-	constructor(options: Options<WSSC>, props?: Record<string, unknown>, handleListen?: (() => void)) {
+	constructor(options: Options<WSSC>) {
 		const {
 			ssl: _,
 			port,
@@ -30,19 +27,25 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 			server
 		});
 		
-		this.port = typeof port == "string" ? Number.parseInt(port) : port;
+		this.server = server;
 		
-		if (props)
-			if (typeof props == "function")
-				handleListen = props;
-			else
-				Object.assign(this, props);
+		if (options.server)
+			new Promise<void>(resolve => void (
+				server.listening ?
+					resolve() :
+					server.on("listening", resolve)
+			)).then(() => showServerListeningMessage(this));
+		else
+			this.server.listen(
+				typeof port == "string" ?
+					Number.parseInt(port) :
+					port ?? (this.isS ? 443 : 80),
+				() => showServerListeningMessage(this)
+			);
 		
-		this.on("connection", this.handleConnection);
+		this.on("connection", this.#handleConnection);
 		
-		this.on(`client-message:${requestHeaders.request}`, this.handleRequest);
-		
-		server.listen(this.port, handleListen);
+		this.on(`client-message:${requestHeaders.request}`, this.#handleRequest);
 		
 	}
 	
@@ -64,12 +67,22 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 	readonly isWebSocketServerClient = false;
 	readonly isWebSocket = false;
 	
-	readonly port;
+	icon = "🔌";
+	name = "WebSocket";
+	get protocol() {
+		return `ws${this.isS ? "s" : ""}`;
+	}
 	
-	private readonly requestListeners = new Map<string, RequestListener<WSSC>>();
+	server;
+	
+	get isS() {
+		return "setSecureContext" in this.server;
+	}
+	
+	#requestListeners = new Map<string, RequestListener<WSSC>>();
 	
 	addRequestListener(kind: string, listener: RequestListener<WSSC>) {
-		this.requestListeners.set(kind, listener);
+		this.#requestListeners.set(kind, listener);
 		
 		return this;
 	}
@@ -77,15 +90,15 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 	onRequest = this.addRequestListener;
 	
 	removeRequestListener(kind: string) {
-		this.requestListeners.delete(kind);
+		this.#requestListeners.delete(kind);
 		
 		return this;
 	}
 	
 	offRequest = this.removeRequestListener;
 	
-	private handleRequest = async (wssc: WSSC, id: string, kind: string, ...rest: unknown[]) => {
-		const listener = this.requestListeners.get(kind);
+	#handleRequest = async (wssc: WSSC, id: string, kind: string, ...rest: unknown[]) => {
+		const listener = this.#requestListeners.get(kind);
 		
 		let result;
 		let requestError = null;
@@ -108,7 +121,7 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 		
 	};
 	
-	private handleConnection(wssc: WSSC, request: http.IncomingMessage) {
+	#handleConnection(wssc: WSSC, request: http.IncomingMessage) {
 		if (!(wssc instanceof InSiteWebSocketServerClient)) { /* Compatibility with Bun */
 			Object.defineProperties(wssc, {
 				isConnecting: {
@@ -156,16 +169,16 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 		
 		wssc[defibSymbol]();
 		
-		wssc.on("message", data => this.handleClientMessage(wssc, data));
-		wssc.on("error", error => this.handleClientError(wssc, error));
-		wssc.on("close", (...args) => this.handleClientClose(wssc, ...args));
+		wssc.on("message", data => this.#handleClientMessage(wssc, data));
+		wssc.on("error", error => this.#handleClientError(wssc, error));
+		wssc.on("close", (...args) => this.#handleClientClose(wssc, ...args));
 		
 		this.emit("client-connect", wssc, request);
 		
 	}
 	
 	
-	private handleClientMessage(wssc: WSSC, data: RawData) {
+	#handleClientMessage(wssc: WSSC, data: RawData) {
 		const message = data.toString();
 		
 		wssc[defibSymbol]();
@@ -178,7 +191,7 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 				this.emit("client-message", wssc, kind, ...rest);
 				this.emit(`client-message:${kind}`, wssc, ...rest);
 			} catch (error) {
-				this.handleClientError(wssc, error as Error);
+				this.#handleClientError(wssc, error as Error);
 			}
 		else if (wssc[pingTsSymbol]) {
 			wssc.latency = Date.now() - wssc[pingTsSymbol];
@@ -187,7 +200,7 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 		
 	}
 	
-	private handleClientError(wssc: WSSC, error: Error | Event | undefined) {
+	#handleClientError(wssc: WSSC, error: Error | Event | undefined) {
 		if (error instanceof Event)
 			error = undefined;
 		
@@ -198,7 +211,7 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 		
 	}
 	
-	private handleClientClose(wssc: WSSC, code: number, reason: Buffer) {
+	#handleClientClose(wssc: WSSC, code: number, reason: Buffer) {
 		
 		if (process.env.NODE_ENV === "development")
 			console.info(`WebSocketServer Client closed ${code ? `with code ${code}` : ""} ${code && reason ? "and " : ""}${reason ? `reason "${reason.toString()}"` : ""}`);
