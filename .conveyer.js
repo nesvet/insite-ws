@@ -17,6 +17,7 @@ new Conveyer([
 		entryPoints: [ "src/server/index.ts" ],
 		outfile: path.resolve(distDir, "server/index.js"),
 		external: [ true, "insite-*" ],
+		local: "insite-common",
 		platform: "node",
 		target: "node20",
 		...common
