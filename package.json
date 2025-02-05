@@ -7,7 +7,7 @@
     "./server": "./dist/server/index.js",
     "./client": "./dist/client/index.js"
   },
-  "packageManager": "bun@1.1.43",
+  "packageManager": "bun@1.2.2",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "bun .conveyer.js",
@@ -25,15 +25,16 @@
   "author": "Eugene Nesvetaev <dev@nesvet.dev> (https://nesvet.dev/)",
   "license": "MIT",
   "dependencies": {
-    "@nesvet/n": "^1.1.7",
+    "@nesvet/n": "^1.1.21",
     "eventemitter3": "^5.0.1",
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@nesvet/conveyer": "^2.2.5",
-    "@nesvet/eslint-config": "^2.0.34",
-    "@types/node": "^22.10.5",
-    "@types/ws": "^8.5.13",
+    "@nesvet/conveyer": "^2.4.2",
+    "@nesvet/eslint-config": "^2.0.45",
+    "@types/node": "^22.13.1",
+    "@types/ws": "^8.5.14",
+    "insite-common": "^2.1.0",
     "typescript": "^5.7.3"
   }
 }
