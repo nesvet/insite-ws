@@ -25,13 +25,13 @@
   "author": "Eugene Nesvetaev <dev@nesvet.dev> (https://nesvet.dev/)",
   "license": "MIT",
   "dependencies": {
-    "@nesvet/n": "^1.1.21",
+    "@nesvet/n": "^1.1.22",
     "eventemitter3": "^5.0.1",
     "ws": "^8.18.0"
   },
   "devDependencies": {
     "@nesvet/conveyer": "^2.4.2",
-    "@nesvet/eslint-config": "^2.0.45",
+    "@nesvet/eslint-config": "^2.0.47",
     "@types/node": "^22.13.1",
     "@types/ws": "^8.5.14",
     "insite-common": "^2.1.0",
