@@ -3,13 +3,13 @@ import { RawData, WebSocket } from "ws";
 import { debounce, uid } from "@nesvet/n";
 import { heartbeatGap, heartbeatInterval, requestHeaders } from "../common";
 import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
-import { InSiteWebSocketServer } from "./WebSocketServer";
+import { WSServer } from "./WSServer";
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 
-export class InSiteWebSocketServerClient<WSSC extends InSiteWebSocketServerClient = any> extends WebSocket {
+export class WSServerClient<WSSC extends WSServerClient = any> extends WebSocket {
 	on(event: "close", listener: (this: WSSC, code: number, reason: Buffer) => void): this;
 	on(event: "error", listener: (this: WSSC, error: Error) => void): this;
 	on(event: "upgrade", listener: (this: WSSC, request: IncomingMessage) => void): this;
@@ -42,19 +42,19 @@ export class InSiteWebSocketServerClient<WSSC extends InSiteWebSocketServerClien
 	readonly isWebSocketServer = false;
 	readonly isWebSocket = false;
 	
-	wss!: InSiteWebSocketServer<WSSC>;
+	wss!: WSServer<WSSC>;
 	
 	userAgent = "";
 	
 	remoteAddress = "";
 	
-	[defibSymbol] = InSiteWebSocketServerClient.makeDefib.call(this);
+	[defibSymbol] = WSServerClient.makeDefib.call(this);
 	
 	latency = 0;
 	
 	[pingTsSymbol]?: number;
 	
-	[heartbeatIntervalSymbol] = InSiteWebSocketServerClient.makeHeartbeatInterval.call(this);
+	[heartbeatIntervalSymbol] = WSServerClient.makeHeartbeatInterval.call(this);
 	
 	sendMessage(...args: unknown[]) {
 		return this.send(JSON.stringify(args));
@@ -88,11 +88,11 @@ export class InSiteWebSocketServerClient<WSSC extends InSiteWebSocketServerClien
 	}
 	
 	
-	static makeDefib(this: InSiteWebSocketServerClient<any>) {
+	static makeDefib(this: WSServerClient<any>) {
 		return debounce(() => this.terminate(), heartbeatInterval + heartbeatGap);
 	}
 	
-	static makeHeartbeatInterval(this: InSiteWebSocketServerClient<any>) {
+	static makeHeartbeatInterval(this: WSServerClient<any>) {
 		return setInterval(() => {
 			
 			this[pingTsSymbol] = Date.now();

@@ -1,28 +1,28 @@
 import type http from "node:http";
 import type https from "node:https";
-import { type RawData, type WebSocket, WebSocketServer } from "ws";
+import { WebSocketServer as NodeWebSocketServer, type RawData, type WebSocket } from "ws";
 import { createServer, resolveSSL, showServerListeningMessage } from "insite-common/backend";
 import { requestHeaders } from "../common";
 import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
 import { getRemoteAddress } from "./utils";
-import { InSiteWebSocketServerClient } from "./WebSocketServerClient";
+import { WSServerClient } from "./WSServerClient";
 import type { Options, RequestListener } from "./types";
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 
-export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = InSiteWebSocketServerClient> extends WebSocketServer<typeof InSiteWebSocketServerClient> {
+export class WSServer<WSSC extends WSServerClient = WSServerClient> extends NodeWebSocketServer<typeof WSServerClient> {
 	constructor(options: Options<WSSC>) {
 		const {
 			ssl: _,
 			port,
-			server = createServer(InSiteWebSocketServer.makeProps(options)),
+			server = createServer(WSServer.makeProps(options)),
 			...wssOptions
 		} = options;
 		
 		super({
-			WebSocket: InSiteWebSocketServerClient<WSSC>,
+			WebSocket: WSServerClient<WSSC>,
 			...wssOptions,
 			server
 		});
@@ -49,18 +49,18 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 		
 	}
 	
-	on(event: "connection", callback: (this: InSiteWebSocketServer<WSSC>, socket: WSSC, request: http.IncomingMessage) => void): this;
-	on(event: "error", callback: (this: InSiteWebSocketServer<WSSC>, error: Error) => void): this;
-	on(event: "headers", callback: (this: InSiteWebSocketServer<WSSC>, headers: string[], request: http.IncomingMessage) => void): this;
-	on(event: "close" | "listening", callback: (this: InSiteWebSocketServer<WSSC>) => void): this;
+	on(event: "connection", callback: (this: WSServer<WSSC>, socket: WSSC, request: http.IncomingMessage) => void): this;
+	on(event: "error", callback: (this: WSServer<WSSC>, error: Error) => void): this;
+	on(event: "headers", callback: (this: WSServer<WSSC>, headers: string[], request: http.IncomingMessage) => void): this;
+	on(event: "close" | "listening", callback: (this: WSServer<WSSC>) => void): this;
 	
-	on(event: "client-connect", listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, request: http.IncomingMessage) => void): this;
-	on(event: "client-error", listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, error: Error | undefined) => void): this;
-	on(event: `client-${string}`, listener: (this: InSiteWebSocketServer<WSSC>, wscc: WSSC, ...args: any[]) => void): this;
+	on(event: "client-connect", listener: (this: WSServer<WSSC>, wscc: WSSC, request: http.IncomingMessage) => void): this;
+	on(event: "client-error", listener: (this: WSServer<WSSC>, wscc: WSSC, error: Error | undefined) => void): this;
+	on(event: `client-${string}`, listener: (this: WSServer<WSSC>, wscc: WSSC, ...args: any[]) => void): this;
 	
-	on(event: string | symbol, listener: (this: InSiteWebSocketServer<WSSC>, ...args: any[]) => void): this;
-	on(event: string | symbol, listener: (this: InSiteWebSocketServer<WSSC>, ...args: any[]) => void): this {
-		return super.on(event, listener as unknown as (this: WebSocketServer, ...args: any[]) => void);
+	on(event: string | symbol, listener: (this: WSServer<WSSC>, ...args: any[]) => void): this;
+	on(event: string | symbol, listener: (this: WSServer<WSSC>, ...args: any[]) => void): this {
+		return super.on(event, listener as unknown as (this: NodeWebSocketServer, ...args: any[]) => void);
 	}
 	
 	readonly isWebSocketServer = true;
@@ -122,19 +122,19 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 	};
 	
 	#handleConnection(wssc: WSSC, request: http.IncomingMessage) {
-		if (!(wssc instanceof InSiteWebSocketServerClient)) { /* Compatibility with Bun */
+		if (!(wssc instanceof WSServerClient)) { /* Compatibility with Bun */
 			Object.defineProperties(wssc, {
 				isConnecting: {
-					get: Object.getOwnPropertyDescriptor(InSiteWebSocketServerClient.prototype, "isConnecting")!.get
+					get: Object.getOwnPropertyDescriptor(WSServerClient.prototype, "isConnecting")!.get
 				},
 				isOpen: {
-					get: Object.getOwnPropertyDescriptor(InSiteWebSocketServerClient.prototype, "isOpen")!.get
+					get: Object.getOwnPropertyDescriptor(WSServerClient.prototype, "isOpen")!.get
 				},
 				isClosing: {
-					get: Object.getOwnPropertyDescriptor(InSiteWebSocketServerClient.prototype, "isClosing")!.get
+					get: Object.getOwnPropertyDescriptor(WSServerClient.prototype, "isClosing")!.get
 				},
 				isClosed: {
-					get: Object.getOwnPropertyDescriptor(InSiteWebSocketServerClient.prototype, "isClosed")!.get
+					get: Object.getOwnPropertyDescriptor(WSServerClient.prototype, "isClosed")!.get
 				}
 			});
 			
@@ -144,11 +144,11 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 				isWebSocketServerClient: true,
 				isWebSocketServer: false,
 				isWebSocket: false,
-				[defibSymbol]: InSiteWebSocketServerClient.makeDefib.call(wssc),
+				[defibSymbol]: WSServerClient.makeDefib.call(wssc),
 				latency: 0,
-				[heartbeatIntervalSymbol]: InSiteWebSocketServerClient.makeHeartbeatInterval.call(wssc),
-				sendMessage: InSiteWebSocketServerClient.prototype.sendMessage,
-				sendRequest: InSiteWebSocketServerClient.prototype.sendRequest,
+				[heartbeatIntervalSymbol]: WSServerClient.makeHeartbeatInterval.call(wssc),
+				sendMessage: WSServerClient.prototype.sendMessage,
+				sendRequest: WSServerClient.prototype.sendRequest,
 				terminate() { /* Workaround Bun's WebSocket#terminate bug */
 					
 					try {
@@ -225,7 +225,7 @@ export class InSiteWebSocketServer<WSSC extends InSiteWebSocketServerClient = In
 	}
 	
 	
-	static makeProps<SWSSC extends InSiteWebSocketServerClient>({ ssl }: Options<SWSSC>): http.ServerOptions | https.ServerOptions {
+	static makeProps<SWSSC extends WSServerClient>({ ssl }: Options<SWSSC>): http.ServerOptions | https.ServerOptions {
 		return {
 			...resolveSSL(ssl)
 		};

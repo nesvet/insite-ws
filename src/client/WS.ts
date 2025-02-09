@@ -29,7 +29,7 @@ export type Options = {
 type RequestListener = (...args: any[]) => Promise<any> | any;// eslint-disable-line @typescript-eslint/no-explicit-any
 
 
-export class InSiteWebSocket extends EventEmitter {
+export class WS extends EventEmitter {
 	constructor(options: Options = {}) {
 		super();
 		
@@ -85,7 +85,7 @@ export class InSiteWebSocket extends EventEmitter {
 	
 	webSocket: WebSocket | null = null;
 	
-	#defib = debounce(InSiteWebSocket.defib, heartbeatInterval + heartbeatGap);
+	#defib = debounce(WS.defib, heartbeatInterval + heartbeatGap);
 	
 	get isConnecting() {
 		return this.webSocket ? this.webSocket.readyState === WebSocket.CONNECTING : null;
@@ -338,7 +338,7 @@ export class InSiteWebSocket extends EventEmitter {
 	};
 	
 	
-	static defib(this: InSiteWebSocket) {
+	static defib(this: WS) {
 		
 		if (this.isOpen) {
 			if (process.env.NODE_ENV === "development" && !this.#isQuiet)

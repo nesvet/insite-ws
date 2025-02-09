@@ -1,3 +1,3 @@
 export type { Options } from "./types";
-export * from "./WebSocketServer";
-export * from "./WebSocketServerClient";
+export * from "./WSServer";
+export * from "./WSServerClient";
