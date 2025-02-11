@@ -27,14 +27,14 @@
   "dependencies": {
     "@nesvet/n": "^1.1.22",
     "eventemitter3": "^5.0.1",
+    "insite-common": "^2.1.2",
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@nesvet/conveyer": "^2.4.2",
+    "@nesvet/conveyer": "^2.4.3",
     "@nesvet/eslint-config": "^2.0.47",
     "@types/node": "^22.13.1",
     "@types/ws": "^8.5.14",
-    "insite-common": "^2.1.0",
     "typescript": "^5.7.3"
   }
 }
