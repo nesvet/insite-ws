@@ -18,13 +18,16 @@ const headersThatMayContainRemoteAddress = [
 	"x-cluster-client-ip"
 ] as const;
 
+let host: string | undefined;
 let headerWithRemoteAddress: typeof headersThatMayContainRemoteAddress[number] | false | null | undefined;
 
 const remoteAddressRegExp = /^.*?((?:\d{1,3}\.){3}\d{1,3}).*$/;
 
 export function getRemoteAddress(request: IncomingMessage) {
-	
-	if (headerWithRemoteAddress === undefined) {
+	if (headerWithRemoteAddress === undefined || host !== request.headers.host) {
+		headerWithRemoteAddress = undefined;
+		({ host } = request.headers);
+		
 		for (const headerName of headersThatMayContainRemoteAddress) {
 			const header = request.headers[headerName];
 			if (typeof header == "string" && remoteAddressRegExp.test(header))
