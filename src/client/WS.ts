@@ -149,7 +149,7 @@ export class WS extends EventEmitter {
 	#handleWebSocketClose = (event: CloseEvent) => {
 		
 		if (process.env.NODE_ENV === "development" && !this.#isQuiet)
-			console.info(`WebSocket ${this.name} is closed with code ${event.code} and reason "${event.reason}"`);
+			console.info(`WS ${this.name} is closed with code ${event.code} and reason "${event.reason}"`);
 		
 		this.#defib.clear();
 		
@@ -168,7 +168,7 @@ export class WS extends EventEmitter {
 		
 		if (this.reconnectAfter && ![ 1002, 3500, 4000 ].includes(event.code)) {
 			if (process.env.NODE_ENV === "development" && !this.#isQuiet)
-				console.info(`WebSocket ${this.name} will try to reconnect in 2 sec…`);
+				console.info(`WS ${this.name} will try to reconnect in 2 sec…`);
 			
 			this.#reconnectTimeout = setTimeout(() => this.open().catch(noop), this.reconnectAfter) as unknown as number;
 		}
@@ -342,7 +342,7 @@ export class WS extends EventEmitter {
 		
 		if (this.isOpen) {
 			if (process.env.NODE_ENV === "development" && !this.#isQuiet)
-				console.info(`WebSocket ${this.name} has no heartbeat - going offline`);
+				console.info(`WS ${this.name} has no heartbeat - going offline`);
 			
 			this.webSocket!.close();
 		}

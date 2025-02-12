@@ -68,7 +68,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends Node
 	readonly isWebSocket = false;
 	
 	icon = "🔌";
-	name = "WebSocket";
+	name = "WS";
 	get protocol() {
 		return `ws${this.isS ? "s" : ""}`;
 	}
@@ -112,7 +112,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends Node
 					requestError = { message, ...restProps };
 				}
 				if (process.env.NODE_ENV === "development")
-					console.error(`WebSocketServer request "${kind}" (${id}) error: `, error);
+					console.error(`WS Server request "${kind}" (${id}) error: `, error);
 			}
 		else
 			requestError = { message: `Unknown request kind "${kind}"` };
@@ -205,7 +205,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends Node
 			error = undefined;
 		
 		if (process.env.NODE_ENV === "development")
-			console.error("WebSocketServer Client error", error);
+			console.error("WS Server Client error", error);
 		
 		this.emit("client-error", wssc, error);
 		
@@ -214,7 +214,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends Node
 	#handleClientClose(wssc: WSSC, code: number, reason: Buffer) {
 		
 		if (process.env.NODE_ENV === "development")
-			console.info(`WebSocketServer Client closed ${code ? `with code ${code}` : ""} ${code && reason ? "and " : ""}${reason ? `reason "${reason.toString()}"` : ""}`);
+			console.info(`WS Server Client closed ${code ? `with code ${code}` : ""} ${code && reason ? "and " : ""}${reason ? `reason "${reason.toString()}"` : ""}`);
 		
 		wssc[defibSymbol].clear();
 		clearInterval(wssc[heartbeatIntervalSymbol]);
