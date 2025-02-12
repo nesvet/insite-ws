@@ -18,7 +18,7 @@ const headersThatMayContainRemoteAddress = [
 	"x-cluster-client-ip"
 ] as const;
 
-let headerWithRemoteAddress: false | null | typeof headersThatMayContainRemoteAddress[number] | undefined;
+let headerWithRemoteAddress: typeof headersThatMayContainRemoteAddress[number] | false | null | undefined;
 
 const remoteAddressRegExp = /^.*?((?:\d{1,3}\.){3}\d{1,3}).*$/;
 
@@ -30,6 +30,7 @@ export function getRemoteAddress(request: IncomingMessage) {
 			if (typeof header == "string" && remoteAddressRegExp.test(header))
 				headerWithRemoteAddress = headerName;
 		}
+		
 		headerWithRemoteAddress ??=
 			request.socket.remoteAddress && remoteAddressRegExp.test(request.socket.remoteAddress) ?
 				false :
