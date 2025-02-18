@@ -27,7 +27,7 @@
   "dependencies": {
     "@nesvet/n": "^1.1.23",
     "eventemitter3": "^5.0.1",
-    "insite-common": "^2.1.2",
+    "insite-common": "^2.1.3",
     "ws": "^8.18.0"
   },
   "devDependencies": {
