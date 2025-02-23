@@ -1,6 +1,6 @@
 import type http from "node:http";
 import type https from "node:https";
-import { WebSocketServer as NodeWebSocketServer, type RawData, type WebSocket } from "ws";
+import { WebSocketServer, type RawData, type WebSocket } from "ws";
 import { createServer, resolveSSL, showServerListeningMessage } from "insite-common/backend";
 import { requestHeaders } from "../common";
 import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
@@ -12,7 +12,7 @@ import type { Options, RequestListener } from "./types";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 
-export class WSServer<WSSC extends WSServerClient = WSServerClient> extends NodeWebSocketServer<typeof WSServerClient> {
+export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebSocketServer<typeof WSServerClient> {
 	constructor(options: Options<WSSC>) {
 		const {
 			ssl: _,
@@ -64,7 +64,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends Node
 	
 	on(event: string | symbol, listener: (this: WSServer<WSSC>, ...args: any[]) => void): this;
 	on(event: string | symbol, listener: (this: WSServer<WSSC>, ...args: any[]) => void): this {
-		return super.on(event, listener as unknown as (this: NodeWebSocketServer, ...args: any[]) => void);
+		return super.on(event, listener as unknown as (this: WebSocketServer, ...args: any[]) => void);
 	}
 	
 	readonly isWebSocketServer = true;
