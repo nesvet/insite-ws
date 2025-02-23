@@ -47,6 +47,10 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends Node
 		
 		this.on(`client-message:${requestHeaders.request}`, this.#handleRequest);
 		
+		this.on("error", (error: Error) => console.error(`${this.icon}❗️ WS Server:`, error));
+		
+		this.on("close", () => console.error(`${this.icon}❗️ WS Server closed`));
+		
 	}
 	
 	on(event: "connection", callback: (this: WSServer<WSSC>, socket: WSSC, request: http.IncomingMessage) => void): this;
@@ -112,7 +116,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends Node
 					requestError = { message, ...restProps };
 				}
 				if (process.env.NODE_ENV === "development")
-					console.error(`WS Server request "${kind}" (${id}) error: `, error);
+					console.error(`${this.icon}❗️ WS Server request "${kind}" (${id}):`, error);
 			}
 		else
 			requestError = { message: `Unknown request kind "${kind}"` };
@@ -175,6 +179,14 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends Node
 		
 		this.emit("client-connect", wssc, request);
 		
+		if (process.env.NODE_ENV === "development")
+			console.info(
+				`${this.icon} WS Server:`,
+				"user" in wssc ? `\x1B[1m${(wssc.user as { email: string }).email}\x1B[0m` : "\x1B[3manonymous\x1B[0m",
+				"connected"
+			);
+		
+		
 	}
 	
 	
@@ -204,8 +216,11 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends Node
 		if (error instanceof Event)
 			error = undefined;
 		
-		if (process.env.NODE_ENV === "development")
-			console.error("WS Server Client error", error);
+		console.error(
+			`${this.icon}❗️ WS Server client`,
+			"user" in wssc ? `\x1B[1m${(wssc.user as { email: string }).email}\x1B[0m:` : "\x1B[3manonymous\x1B[0m:",
+			error
+		);
 		
 		this.emit("client-error", wssc, error);
 		
@@ -213,8 +228,15 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends Node
 	
 	#handleClientClose(wssc: WSSC, code: number, reason: Buffer) {
 		
-		if (process.env.NODE_ENV === "development")
-			console.info(`WS Server Client closed ${code ? `with code ${code}` : ""} ${code && reason ? "and " : ""}${reason ? `reason "${reason.toString()}"` : ""}`);
+		if (process.env.NODE_ENV === "development") {
+			const reasonString = reason.toString();
+			
+			console.info(
+				`${this.icon} WS Server:`,
+				"user" in wssc ? `\x1B[1m${(wssc.user as { email: string }).email}\x1B[0m` : "\x1B[3manonymous\x1B[0m",
+				`disconnected ${code ? `with code ${code}` : ""} ${code && reasonString ? "and " : ""}${reasonString ? `reason "${reasonString}"` : ""}`
+			);
+		}
 		
 		wssc[defibSymbol].clear();
 		clearInterval(wssc[heartbeatIntervalSymbol]);
