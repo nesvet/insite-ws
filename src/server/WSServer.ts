@@ -1,6 +1,7 @@
 import type http from "node:http";
 import type https from "node:https";
 import { WebSocketServer, type RawData, type WebSocket } from "ws";
+import { handleMongoError } from "@nesvet/n";
 import { createServer, resolveSSL, showServerListeningMessage } from "insite-common/backend";
 import { requestHeaders } from "../common";
 import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
@@ -111,10 +112,14 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 			try {
 				result = await listener.call(this, wssc, ...rest);
 			} catch (error) {
+				if (process.env.NODE_ENV === "development")
+					handleMongoError(error);
+				
 				if (error instanceof Error) {
 					const { message, ...restProps } = error;
 					requestError = { message, ...restProps };
 				}
+				
 				if (process.env.NODE_ENV === "development")
 					console.error(`${this.icon}❗️ WS Server request "${kind}" (${id}):`, error);
 			}
