@@ -16,6 +16,6 @@ export type Options<WSSC extends WSServerClient> = Omit<ServerOptions<typeof WSS
 	};
 };
 
-export type RequestListener<WSSC extends WSServerClient> = (wscc: WSSC, ...args: any[]) => any | Promise<any>;
+export type RequestListener<WSSC extends WSServerClient> = (wscc: WSSC, ...args: any[]) => Promise<any> | any;
 
 export type CompatibleListener = () => void;
