@@ -146,7 +146,7 @@ export class WS extends EventEmitter {
 		
 	};
 	
-	#reconnectTimeout?: number;
+	#reconnectTimeout?: ReturnType<typeof setTimeout>;
 	
 	#handleWebSocketClose = (event: CloseEvent) => {
 		
@@ -172,7 +172,7 @@ export class WS extends EventEmitter {
 			if (process.env.NODE_ENV === "development" && !this.#isQuiet)
 				console.info(`🔌 WS ${this.name} will try to reconnect in 2 seconds`);
 			
-			this.#reconnectTimeout = setTimeout(() => this.open().catch(noop), this.reconnectAfter) as unknown as number;
+			this.#reconnectTimeout = setTimeout(() => this.open().catch(noop), this.reconnectAfter);
 		}
 		
 	};
