@@ -87,7 +87,7 @@ export class WS extends EventEmitter {
 	
 	webSocket: WebSocket | null = null;
 	
-	#defib = debounce(WS.defib, heartbeatInterval + heartbeatGap);
+	#defib = debounce(WS.defib, HEARTBEAT_INTERVAL + HEARTBEAT_GAP);
 	
 	get isConnecting() {
 		return this.webSocket ? this.webSocket.readyState === WebSocket.CONNECTING : null;
