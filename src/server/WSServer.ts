@@ -35,7 +35,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 		this.server = server;
 		
 		if (options.server)
-			new Promise<void>(resolve => void (
+			void new Promise<void>(resolve => void (
 				server.listening ?
 					resolve() :
 					server.on("listening", resolve)
@@ -180,7 +180,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 			remoteAddress: getRemoteAddress(request)
 		});
 		
-		wssc[defibSymbol]();
+		void wssc[defibSymbol]();
 		
 		wssc.on("message", data => this.#handleClientMessage(wssc, data));
 		wssc.on("error", error => this.#handleClientError(wssc, error));
@@ -200,9 +200,9 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 	
 	
 	#handleClientMessage(wssc: WSSC, data: RawData) {
-		const message = data.toString();
+		const message = data.toString();// eslint-disable-line @typescript-eslint/no-base-to-string
 		
-		wssc[defibSymbol]();
+		void wssc[defibSymbol]();
 		
 		if (message)
 			try {
@@ -247,7 +247,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 			);
 		}
 		
-		wssc[defibSymbol].clear();
+		void wssc[defibSymbol].clear();
 		clearInterval(wssc[heartbeatIntervalSymbol]);
 		
 		this.emit("client-close", wssc);

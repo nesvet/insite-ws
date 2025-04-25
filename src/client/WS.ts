@@ -5,7 +5,7 @@ import {
 	StatefulPromise,
 	uid
 } from "@nesvet/n";
-import { heartbeatGap, heartbeatInterval, requestHeaders } from "../common";
+import { HEARTBEAT_GAP, HEARTBEAT_INTERVAL, requestHeaders } from "../common";
 
 
 declare global {
@@ -26,7 +26,7 @@ export type Options = {
 	quiet?: boolean;
 };
 
-type RequestListener = (...args: any[]) => Promise<any> | any;// eslint-disable-line @typescript-eslint/no-explicit-any
+type RequestListener = (...args: any[]) => any;// eslint-disable-line @typescript-eslint/no-explicit-any
 
 
 export class WS extends EventEmitter {
@@ -113,13 +113,13 @@ export class WS extends EventEmitter {
 		
 		this.emit("open");
 		
-		this.#defib();
+		void this.#defib();
 		
 	};
 	
 	#handleWebSocketMessage = ({ data: message }: MessageEvent) => {
 		
-		this.#defib();
+		void this.#defib();
 		
 		if (message)
 			try {
@@ -140,7 +140,7 @@ export class WS extends EventEmitter {
 			error = undefined;
 		
 		if (this.#openPromise!.isPending)
-			this.#openPromise!.reject(error);
+			this.#openPromise!.reject(error as Error);
 		
 		this.emit("error", error);
 		
@@ -153,7 +153,7 @@ export class WS extends EventEmitter {
 		if (process.env.NODE_ENV === "development" && !this.#isQuiet)
 			console.info(`🔌 WS ${this.name} is closed ${event.code ? `with code ${event.code}` : ""} ${event.code && event.reason ? "and " : ""}${event.reason ? `reason "${event.reason}"` : ""}`);
 		
-		this.#defib.clear();
+		void this.#defib.clear();
 		
 		const webSocket = this.webSocket!;
 		
@@ -289,7 +289,7 @@ export class WS extends EventEmitter {
 			this.once(eventName, (error, result) => {
 				if (error) {
 					const { message, ...restProps } = error;
-					reject(Object.assign(new Error(message), restProps));
+					reject(Object.assign(new Error(message), restProps) as Error);
 				} else
 					resolve(result);
 				

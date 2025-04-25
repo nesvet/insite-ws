@@ -1,7 +1,7 @@
 import { ClientRequest, IncomingMessage } from "node:http";
 import { RawData, WebSocket } from "ws";
 import { debounce, uid } from "@nesvet/n";
-import { heartbeatGap, heartbeatInterval, requestHeaders } from "../common";
+import { HEARTBEAT_GAP, HEARTBEAT_INTERVAL, requestHeaders } from "../common";
 import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
 import { WSServer } from "./WSServer";
 
@@ -77,7 +77,7 @@ export class WSServerClient<WSSC extends WSServerClient = any> extends WebSocket
 			this.once(eventName, (error, result) => {
 				if (error) {
 					const { message, ...restProps } = error;
-					reject(Object.assign(new Error(message), restProps));
+					reject(Object.assign(new Error(message), restProps) as Error);
 				} else
 					resolve(result);
 				
@@ -89,7 +89,7 @@ export class WSServerClient<WSSC extends WSServerClient = any> extends WebSocket
 	
 	
 	static makeDefib(this: WSServerClient<any>) {
-		return debounce(() => this.terminate(), heartbeatInterval + heartbeatGap);
+		return debounce(() => this.terminate(), HEARTBEAT_INTERVAL + HEARTBEAT_GAP);
 	}
 	
 	static makeHeartbeatInterval(this: WSServerClient<any>) {
@@ -98,7 +98,7 @@ export class WSServerClient<WSSC extends WSServerClient = any> extends WebSocket
 			this[pingTsSymbol] = Date.now();
 			this.send("");
 			
-		}, heartbeatInterval);
+		}, HEARTBEAT_INTERVAL);
 	}
 	
 }
