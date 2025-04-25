@@ -347,6 +347,12 @@ export class WS extends EventEmitter {
 				console.info(`🔌 WS ${this.name} has no heartbeat, going offline`);
 			
 			this.webSocket!.close();
+			
+			this.#handleWebSocketClose(Object.assign(new Event("close"), {
+				code: 1001,
+				reason: "forced",
+				wasClean: false
+			}));
 		}
 		
 	}
