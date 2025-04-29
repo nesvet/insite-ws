@@ -109,7 +109,7 @@ export class WS extends EventEmitter {
 	
 	webSocket: WebSocket | null = null;
 	
-	#defib = debounce(WS.defib, HEARTBEAT_INTERVAL + HEARTBEAT_GAP);
+	#defib = debounce(WS.terminate, HEARTBEAT_INTERVAL + HEARTBEAT_GAP);
 	
 	get isConnecting() {
 		return this.webSocket ? this.webSocket.readyState === WebSocket.CONNECTING : null;
@@ -362,7 +362,7 @@ export class WS extends EventEmitter {
 	};
 	
 	
-	static defib(this: WS) {
+	static terminate(this: WS) {
 		
 		if (this.isOpen) {
 			if (process.env.NODE_ENV === "development" && !this.#isQuiet)
