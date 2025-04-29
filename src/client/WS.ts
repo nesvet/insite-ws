@@ -129,7 +129,11 @@ export class WS extends EventEmitter {
 	
 	#openPromise?: StatefulPromise<void>;
 	
+	#wasOpened = false;
+	
 	#handleWebSocketOpen = () => {
+		
+		this.#wasOpened = true;
 		
 		this.#openPromise!.resolve();
 		
@@ -186,7 +190,11 @@ export class WS extends EventEmitter {
 		
 		delete this.send;
 		
-		this.emit("close", event);
+		if (this.#wasOpened) {
+			this.emit("close", event);
+			
+			this.#wasOpened = false;
+		}
 		
 		this.webSocket = null;
 		
