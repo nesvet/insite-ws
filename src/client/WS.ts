@@ -7,6 +7,10 @@ import {
 } from "@nesvet/n";
 import { HEARTBEAT_GAP, HEARTBEAT_INTERVAL, requestHeaders } from "../common";
 
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+
 const NON_RECONNECTABLE_CODES = [
 	1002, // protocol error
 	3500, // manual close
@@ -27,11 +31,11 @@ export type Options = {
 	protocols?: string[];
 	immediately?: boolean;
 	reconnectAfter?: number | null;
-	on?: Record<string, (...args: any[]) => void>;// eslint-disable-line @typescript-eslint/no-explicit-any
+	on?: Record<string, (...args: any[]) => void>;
 	quiet?: boolean;
 };
 
-type RequestListener = (...args: any[]) => any;// eslint-disable-line @typescript-eslint/no-explicit-any
+type RequestListener = (...args: any[]) => any;
 
 
 export class WS extends EventEmitter {
