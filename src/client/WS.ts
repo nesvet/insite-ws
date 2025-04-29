@@ -218,7 +218,7 @@ export class WS extends EventEmitter {
 		if (options.protocols)
 			this.protocols = options.protocols;
 		
-		this.#openPromise = new StatefulPromise((resolve, reject) => {
+		this.#openPromise = new StatefulPromise((_, reject) => {
 			
 			if (this.url) {
 				const webSocket = new WebSocket(this.url, this.protocols);
@@ -247,6 +247,9 @@ export class WS extends EventEmitter {
 		return this.#openPromise;
 	}
 	
+	/**
+	 * Alias for `open()`
+	 */
 	connect = this.open;
 	
 	close(code = 3500, reason = "manual") {
@@ -267,6 +270,9 @@ export class WS extends EventEmitter {
 		});
 	}
 	
+	/**
+	 * Alias for `close()`
+	 */
 	disconnect = this.close;
 	
 	#queue: string[] = [];

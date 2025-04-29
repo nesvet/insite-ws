@@ -202,7 +202,6 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 				"connected"
 			);
 		
-		
 	}
 	
 	
