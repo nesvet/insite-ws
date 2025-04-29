@@ -7,6 +7,11 @@ import {
 } from "@nesvet/n";
 import { HEARTBEAT_GAP, HEARTBEAT_INTERVAL, requestHeaders } from "../common";
 
+const NON_RECONNECTABLE_CODES = [
+	1002, // protocol error
+	3500, // manual close
+	4000 // reopen
+];
 
 declare global {
 	var __insite: { // eslint-disable-line no-var
@@ -168,7 +173,7 @@ export class WS extends EventEmitter {
 		
 		this.webSocket = null;
 		
-		if (this.reconnectAfter && ![ 1002, 3500, 4000 ].includes(event.code)) {
+		if (this.reconnectAfter && !NON_RECONNECTABLE_CODES.includes(event.code)) {
 			if (process.env.NODE_ENV === "development" && !this.#isQuiet)
 				console.info(`🔌 WS ${this.name} will try to reconnect in 2 seconds`);
 			
