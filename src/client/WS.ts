@@ -75,6 +75,18 @@ export class WS extends EventEmitter {
 		
 	}
 	
+	on(event: "connecting", callback: (this: this) => void): this;
+	on(event: "open", callback: (this: this) => void): this;
+	on<T extends unknown[]>(event: "message", callback: (this: this, kind: string, ...rest: T) => void): this;
+	on<T extends unknown[]>(event: `message:${string}`, callback: (this: this, ...rest: T) => void): this;
+	on(event: "close", callback: (this: this, closeEvent: CloseEvent) => void): this;
+	on(event: "server-change", callback: (this: this, url: string, prevURL: string) => void): this;
+	on(event: "error", callback: (this: this, error: Error) => void): this;
+	on<T extends string | symbol>(event: T, fn: (...args: any[]) => void): this;
+	on(event: string | symbol, listener: (this: this, ...args: any[]) => void): this {
+		return super.on(event, listener);
+	}
+	
 	readonly isWebSocket = true;
 	readonly isWebSocketServer = false;
 	readonly isWebSocketServerClient = false;

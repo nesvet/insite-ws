@@ -58,18 +58,18 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 		
 	}
 	
-	on(event: "connection", callback: (this: WSServer<WSSC>, socket: WSSC, request: http.IncomingMessage) => void): this;
-	on(event: "error", callback: (this: WSServer<WSSC>, error: Error) => void): this;
-	on(event: "headers", callback: (this: WSServer<WSSC>, headers: string[], request: http.IncomingMessage) => void): this;
-	on(event: "close" | "listening", callback: (this: WSServer<WSSC>) => void): this;
+	on(event: "connection", callback: (this: this, socket: WSSC, request: http.IncomingMessage) => void): this;
+	on(event: "error", callback: (this: this, error: Error) => void): this;
+	on(event: "headers", callback: (this: this, headers: string[], request: http.IncomingMessage) => void): this;
+	on(event: "close" | "listening", callback: (this: this) => void): this;
 	
-	on(event: "client-connect", listener: (this: WSServer<WSSC>, wscc: WSSC, request: http.IncomingMessage) => void): this;
-	on(event: "client-error", listener: (this: WSServer<WSSC>, wscc: WSSC, error: Error | undefined) => void): this;
-	on(event: `client-${string}`, listener: (this: WSServer<WSSC>, wscc: WSSC, ...args: any[]) => void): this;
+	on(event: "client-connect", listener: (this: this, wscc: WSSC, request: http.IncomingMessage) => void): this;
+	on(event: "client-error", listener: (this: this, wscc: WSSC, error: Error | undefined) => void): this;
+	on(event: `client-${string}`, listener: (this: this, wscc: WSSC, ...args: any[]) => void): this;
 	
-	on(event: string | symbol, listener: (this: WSServer<WSSC>, ...args: any[]) => void): this;
-	on(event: string | symbol, listener: (this: WSServer<WSSC>, ...args: any[]) => void): this {
-		return super.on(event, listener as unknown as (this: WebSocketServer, ...args: any[]) => void);
+	on(event: string | symbol, listener: (this: this, ...args: any[]) => void): this;
+	on(event: string | symbol, listener: (this: this, ...args: any[]) => void): this {
+		return super.on(event, listener as (this: WebSocketServer, ...args: any[]) => void);
 	}
 	
 	readonly isWebSocketServer = true;
