@@ -71,7 +71,8 @@ export class WS extends EventEmitter {
 		if (this.url && immediately)
 			this.open().catch(noop);
 		
-		this.on("error", (error: Error) => error && console.error("🔌❗️ WS", `${this.name}:`, error));
+		if (!this.#isQuiet)
+			this.on("error", (error: Error) => error && console.error("🔌❗️ WS", `${this.name}:`, error));
 		
 	}
 	
