@@ -23,6 +23,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 			ssl: _,
 			port,
 			server = createServer(WSServer.makeProps(options)),
+			quiet = false,
 			...wssOptions
 		} = options;
 		
@@ -48,13 +49,17 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 				() => showServerListeningMessage(this)
 			);
 		
+		this.#isQuiet = quiet;
+		
 		this.on("connection", this.#handleConnection);
 		
 		this.on(`client-message:${requestHeaders.request}`, this.#handleRequest);
 		
-		this.on("error", (error: Error) => console.error(`${this.icon}❗️ WS Server:`, error));
-		
-		this.on("close", () => console.error(`${this.icon}❗️ WS Server closed`));
+		if (!this.#isQuiet) {
+			this.on("error", (error: Error) => console.error(`${this.icon}❗️ WS Server:`, error));
+			
+			this.on("close", () => console.error(`${this.icon}❗️ WS Server closed`));
+		}
 		
 	}
 	
@@ -87,6 +92,8 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 	get isS() {
 		return "setSecureContext" in this.server;
 	}
+	
+	#isQuiet;
 	
 	#requestListeners = new Map<string, RequestListener<WSSC>>();
 	
@@ -124,7 +131,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 					requestError = { message, ...restProps };
 				}
 				
-				if (process.env.NODE_ENV === "development")
+				if (process.env.NODE_ENV === "development" && !this.#isQuiet)
 					console.error(`${this.icon}❗️ WS Server request "${kind}" (${id}):`, error);
 			}
 		else
@@ -188,7 +195,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 		
 		this.emit("client-connect", wssc, request);
 		
-		if (process.env.NODE_ENV === "development")
+		if (process.env.NODE_ENV === "development" && !this.#isQuiet)
 			console.info(
 				`${this.icon} WS Server:`,
 				"user" in wssc ? `\x1B[1m${(wssc.user as { email: string }).email}\x1B[0m` : "\x1B[3manonymous\x1B[0m",
@@ -225,11 +232,12 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 		if (error instanceof Event)
 			error = undefined;
 		
-		console.error(
-			`${this.icon}❗️ WS Server client`,
-			"user" in wssc ? `\x1B[1m${(wssc.user as { email: string }).email}\x1B[0m:` : "\x1B[3manonymous\x1B[0m:",
-			error
-		);
+		if (!this.#isQuiet)
+			console.error(
+				`${this.icon}❗️ WS Server client`,
+				"user" in wssc ? `\x1B[1m${(wssc.user as { email: string }).email}\x1B[0m:` : "\x1B[3manonymous\x1B[0m:",
+				error
+			);
 		
 		this.emit("client-error", wssc, error);
 		
@@ -240,11 +248,12 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 		if (process.env.NODE_ENV === "development") {
 			const reasonString = reason.toString();
 			
-			console.info(
-				`${this.icon} WS Server:`,
-				"user" in wssc ? `\x1B[1m${(wssc.user as { email: string }).email}\x1B[0m` : "\x1B[3manonymous\x1B[0m",
-				`disconnected ${code ? `with code ${code}` : ""} ${code && reasonString ? "and " : ""}${reasonString ? `reason "${reasonString}"` : ""}`
-			);
+			if (!this.#isQuiet)
+				console.info(
+					`${this.icon} WS Server:`,
+					"user" in wssc ? `\x1B[1m${(wssc.user as { email: string }).email}\x1B[0m` : "\x1B[3manonymous\x1B[0m",
+					`disconnected ${code ? `with code ${code}` : ""} ${code && reasonString ? "and " : ""}${reasonString ? `reason "${reasonString}"` : ""}`
+				);
 		}
 		
 		void wssc[defibSymbol].clear();

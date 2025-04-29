@@ -14,6 +14,7 @@ export type Options<WSSC extends WSServerClient> = Omit<ServerOptions<typeof WSS
 	WebSocket?: typeof WSServerClient & {
 		new (...args: any[]): WSSC;
 	};
+	quiet?: boolean;
 };
 
 export type RequestListener<WSSC extends WSServerClient> = (wscc: WSSC, ...args: any[]) => any;
