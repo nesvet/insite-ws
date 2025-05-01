@@ -1,15 +1,13 @@
 import type http from "node:http";
 import type https from "node:https";
-import { WebSocketServer, type RawData, type WebSocket } from "ws";
-import { handleMongoError } from "@nesvet/n";
+import { WebSocketServer } from "ws";
 import {
 	createServer,
 	getRemoteAddress,
 	resolveSSL,
 	showServerListeningMessage
 } from "insite-common/backend";
-import { requestHeaders } from "../common";
-import { defibSymbol, heartbeatIntervalSymbol, pingTsSymbol } from "./symbols";
+import { isQuietSymbol, requestListenersSymbol } from "./symbols";
 import { WSServerClient } from "./WSServerClient";
 import type { Options, RequestListener } from "./types";
 
@@ -28,7 +26,7 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 		} = options;
 		
 		super({
-			WebSocket: WSServerClient<WSSC>,
+			WebSocket: WSServerClient,
 			...wssOptions,
 			server
 		});
@@ -49,13 +47,11 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 				() => showServerListeningMessage(this)
 			);
 		
-		this.#isQuiet = quiet;
+		this[isQuietSymbol] = quiet;
 		
 		this.on("connection", this.#handleConnection);
 		
-		this.on(`client-message:${requestHeaders.request}`, this.#handleRequest);
-		
-		if (!this.#isQuiet) {
+		if (!this[isQuietSymbol]) {
 			this.on("error", (error: Error) => console.error(`${this.icon}❗️ WS Server:`, error));
 			
 			this.on("close", () => console.error(`${this.icon}❗️ WS Server closed`));
@@ -93,93 +89,37 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 		return "setSecureContext" in this.server;
 	}
 	
-	#isQuiet;
+	[isQuietSymbol]: boolean;
 	
-	#requestListeners = new Map<string, RequestListener<WSSC>>();
+	[requestListenersSymbol] = new Map<string, RequestListener<WSSC>>();
 	
 	addRequestListener(kind: string, listener: RequestListener<WSSC>) {
-		this.#requestListeners.set(kind, listener);
+		this[requestListenersSymbol].set(kind, listener);
 		
 		return this;
 	}
 	
+	/**
+	 * Alias for `addRequestListener()`
+	 */
 	onRequest = this.addRequestListener;
 	
 	removeRequestListener(kind: string) {
-		this.#requestListeners.delete(kind);
+		this[requestListenersSymbol].delete(kind);
 		
 		return this;
 	}
 	
+	/**
+	 * Alias for `removeRequestListener()`
+	 */
 	offRequest = this.removeRequestListener;
 	
-	#handleRequest = async (wssc: WSSC, id: string, kind: string, ...rest: unknown[]) => {
-		const listener = this.#requestListeners.get(kind);
-		
-		let result;
-		let requestError = null;
-		
-		if (listener)
-			try {
-				result = await listener.call(this, wssc, ...rest);
-			} catch (error) {
-				if (process.env.NODE_ENV === "development")
-					handleMongoError(error);
-				
-				if (error instanceof Error) {
-					const { message, ...restProps } = error;
-					requestError = { message, ...restProps };
-				}
-				
-				if (process.env.NODE_ENV === "development" && !this.#isQuiet)
-					console.error(`${this.icon}❗️ WS Server request "${kind}" (${id}):`, error);
-			}
-		else
-			requestError = { message: `Unknown request kind "${kind}"` };
-		
-		wssc.sendMessage(`${requestHeaders.response}-${id}`, requestError, result);
-		
-	};
-	
 	#handleConnection(wssc: WSSC, request: http.IncomingMessage) {
-		if (!(wssc instanceof WSServerClient)) { /* Compatibility with Bun */
-			Object.defineProperties(wssc, {
-				isConnecting: {
-					get: Object.getOwnPropertyDescriptor(WSServerClient.prototype, "isConnecting")!.get
-				},
-				isOpen: {
-					get: Object.getOwnPropertyDescriptor(WSServerClient.prototype, "isOpen")!.get
-				},
-				isClosing: {
-					get: Object.getOwnPropertyDescriptor(WSServerClient.prototype, "isClosing")!.get
-				},
-				isClosed: {
-					get: Object.getOwnPropertyDescriptor(WSServerClient.prototype, "isClosed")!.get
-				}
-			});
-			
-			const { terminate } = wssc as WebSocket;
-			
-			Object.assign(wssc, {
-				isWebSocketServerClient: true,
-				isWebSocketServer: false,
-				isWebSocket: false,
-				[defibSymbol]: WSServerClient.makeDefib.call(wssc),
-				latency: 0,
-				[heartbeatIntervalSymbol]: WSServerClient.makeHeartbeatInterval.call(wssc),
-				sendMessage: WSServerClient.prototype.sendMessage,
-				sendRequest: WSServerClient.prototype.sendRequest,
-				terminate() { /* Workaround Bun's WebSocket#terminate bug */
-					
-					try {
-						terminate.call(wssc);
-					} catch (error) {
-						console.error(error);
-					}
-					
-				}
-			});
-		}
+		
+		/* Compatibility with Bun */
+		if (!(wssc instanceof WSServerClient))
+			WSServerClient.extend.call(wssc);
 		
 		Object.assign(wssc, {
 			wss: this,
@@ -187,79 +127,16 @@ export class WSServer<WSSC extends WSServerClient = WSServerClient> extends WebS
 			remoteAddress: getRemoteAddress(request)
 		});
 		
-		void wssc[defibSymbol]();
-		
-		wssc.on("message", data => this.#handleClientMessage(wssc, data));
-		wssc.on("error", error => this.#handleClientError(wssc, error));
-		wssc.on("close", (...args) => this.#handleClientClose(wssc, ...args));
+		WSServerClient.handleConnect.call(wssc);
 		
 		this.emit("client-connect", wssc, request);
 		
-		if (process.env.NODE_ENV === "development" && !this.#isQuiet)
+		if (process.env.NODE_ENV === "development" && !this[isQuietSymbol])
 			console.info(
 				`${this.icon} WS Server:`,
 				"user" in wssc ? `\x1B[1m${(wssc.user as { email: string }).email}\x1B[0m` : "\x1B[3manonymous\x1B[0m",
 				"connected"
 			);
-		
-	}
-	
-	
-	#handleClientMessage(wssc: WSSC, data: RawData) {
-		const message = data.toString();// eslint-disable-line @typescript-eslint/no-base-to-string
-		
-		void wssc[defibSymbol]();
-		
-		if (message)
-			try {
-				const [ kind, ...rest ] = JSON.parse(message);
-				
-				wssc.emit(`message:${kind}`, ...rest);
-				this.emit("client-message", wssc, kind, ...rest);
-				this.emit(`client-message:${kind}`, wssc, ...rest);
-			} catch (error) {
-				this.#handleClientError(wssc, error as Error);
-			}
-		else if (wssc[pingTsSymbol]) {
-			wssc.latency = Date.now() - wssc[pingTsSymbol];
-			delete wssc[pingTsSymbol];
-		}
-		
-	}
-	
-	#handleClientError(wssc: WSSC, error: Error | Event | undefined) {
-		if (error instanceof Event)
-			error = undefined;
-		
-		if (!this.#isQuiet)
-			console.error(
-				`${this.icon}❗️ WS Server client`,
-				"user" in wssc ? `\x1B[1m${(wssc.user as { email: string }).email}\x1B[0m:` : "\x1B[3manonymous\x1B[0m:",
-				error
-			);
-		
-		this.emit("client-error", wssc, error);
-		
-	}
-	
-	#handleClientClose(wssc: WSSC, code: number, reason: Buffer) {
-		
-		if (process.env.NODE_ENV === "development") {
-			const reasonString = reason.toString();
-			
-			if (!this.#isQuiet)
-				console.info(
-					`${this.icon} WS Server:`,
-					"user" in wssc ? `\x1B[1m${(wssc.user as { email: string }).email}\x1B[0m` : "\x1B[3manonymous\x1B[0m",
-					`disconnected ${code ? `with code ${code}` : ""} ${code && reasonString ? "and " : ""}${reasonString ? `reason "${reasonString}"` : ""}`
-				);
-		}
-		
-		void wssc[defibSymbol].clear();
-		clearInterval(wssc[heartbeatIntervalSymbol]);
-		
-		this.emit("client-close", wssc);
-		this.emit("client-closed", wssc);
 		
 	}
 	
