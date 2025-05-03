@@ -18,7 +18,7 @@ new Conveyer([
 		outfile: path.resolve(distDir, "server/index.js"),
 		external: [ true, "insite-*" ],
 		platform: "node",
-		target: "node20",
+		target: "node22",
 		...common
 	}),
 	
