@@ -147,7 +147,7 @@ export class WSServerClient extends WebSocket {
 			}
 		});
 		
-		const { terminate } = this as WebSocket;
+		const { terminate } = this;
 		
 		Object.assign(this, {
 			isWebSocketServerClient: true,
