@@ -319,7 +319,7 @@ export class WS extends EventEmitter {
 		
 		this.#decideReconnect(code);
 		
-		if ("navigator" in globalThis)
+		if ("navigator" in globalThis && "addEventListener" in globalThis)
 			globalThis.removeEventListener("offline", this.#handleOffline);
 		
 	};
@@ -370,7 +370,7 @@ export class WS extends EventEmitter {
 				
 				this.emit("connecting");
 				
-				if ("navigator" in globalThis)
+				if ("navigator" in globalThis && "addEventListener" in globalThis)
 					globalThis.addEventListener("offline", this.#handleOffline);
 			} else {
 				this.webSocket = null;
