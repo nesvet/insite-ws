@@ -30,6 +30,16 @@ new Conveyer([
 		platform: "neutral",
 		target: "es2020",
 		...common
+	}),
+	
+	new ESBuild({
+		title: "Node Client",
+		entryPoints: [ "src/client/node/index.ts" ],
+		outfile: path.resolve(distDir, "client/node/index.js"),
+		external: true,
+		platform: "node",
+		target: "node22",
+		...common
 	})
 	
 ], {

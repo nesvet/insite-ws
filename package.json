@@ -5,7 +5,8 @@
 	"type": "module",
 	"exports": {
 		"./server": "./dist/server/index.js",
-		"./client": "./dist/client/index.js"
+		"./client": "./dist/client/index.js",
+		"./client/node": "./dist/client/node/index.js"
 	},
 	"packageManager": "bun@1.2.13",
 	"scripts": {
