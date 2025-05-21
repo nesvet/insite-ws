@@ -569,11 +569,11 @@ export class WS extends EventEmitter {
 		
 		this.close(CODES.NORMAL, "destroy");
 		
+		this.emit("destroy");
+		
 		this.removeAllListeners();
 		
 		this.#abortSignal?.removeEventListener("abort", this.#handleAbortSignalAbort);
-		
-		this.emit("destroy");
 		
 	}
 	
