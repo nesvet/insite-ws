@@ -17,6 +17,7 @@ export type Options = {
 	immediately?: boolean;
 	reconnectAfter?: number | null;
 	on?: Record<string, (...args: any[]) => void>;
+	once?: Record<string, (...args: any[]) => void>;
 	quiet?: boolean;
 	signal?: AbortSignal;
 };

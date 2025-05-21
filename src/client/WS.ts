@@ -30,6 +30,7 @@ export class WS extends EventEmitter {
 			immediately = true,
 			reconnectAfter = 2000,
 			on,
+			once,
 			quiet = false,
 			signal
 		} = options;
@@ -45,6 +46,11 @@ export class WS extends EventEmitter {
 			for (const eventName in on)
 				if (on[eventName])
 					this.on(eventName, on[eventName]);
+		
+		if (once)
+			for (const eventName in once)
+				if (once[eventName])
+					this.once(eventName, once[eventName]);
 		
 		this.#isQuiet = quiet;
 		
